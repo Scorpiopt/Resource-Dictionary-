@@ -25,6 +25,12 @@ namespace Deduplicator
             base.DoSettingsWindowContents(inRect);
             settings.DoSettingsWindowContents(inRect);
         }
+
+        public override void WriteSettings()
+        {
+            base.WriteSettings();
+            settings.curThingGroups = null;
+        }
         public override string SettingsCategory()
         {
             return this.Content.Name;

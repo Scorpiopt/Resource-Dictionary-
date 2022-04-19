@@ -47,7 +47,6 @@
     <Compile Include="ThingDictionaryMod.cs" />
     <Compile Include="ThingDictionarySettings.cs" />
     <Compile Include="ThingGroup.cs" />
-    <Compile Include="ThingGroupExposable.cs" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Krafs.Publicizer">

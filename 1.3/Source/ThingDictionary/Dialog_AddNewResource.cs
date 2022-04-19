@@ -18,8 +18,6 @@ namespace Deduplicator
 		private Vector2 scrollPosition;
 		public override Vector2 InitialSize => new Vector2(620f, 500f);
 
-		public List<ThingDef> stuffThingDefs;
-
 		public ThingGroup thingGroup;
 		public Dialog_AddNewThing(ThingGroup thingGroup)
 		{
@@ -28,7 +26,6 @@ namespace Deduplicator
 			closeOnClickedOutside = true;
 			absorbInputAroundWindow = true;
 			this.thingGroup = thingGroup;
-			stuffThingDefs = DefDatabase<ThingDef>.AllDefs.Where(x => x.IsStuff && !thingGroup.thingDefs.Contains(x)).ToList();
 		}
 
 		string searchKey;
@@ -48,7 +45,8 @@ namespace Deduplicator
 			outRect.yMax -= 70f;
 			outRect.width -= 16f;
 
-			var thingDefs = searchKey.NullOrEmpty() ? stuffThingDefs.ToList() : stuffThingDefs.Where(x => x.label.ToLower().Contains(searchKey.ToLower())).ToList();
+			var thingDefs = searchKey.NullOrEmpty() ? Core.allSpawnableDefs.ToList() 
+				: Core.allSpawnableDefs.Where(x => x.label.ToLower().Contains(searchKey.ToLower())).ToList();
 
 			Rect viewRect = new Rect(0f, 0f, outRect.width - 16f, (float)thingDefs.Count() * 35f);
 			Widgets.BeginScrollView(outRect, ref scrollPosition, viewRect);
@@ -63,13 +61,9 @@ namespace Deduplicator
 					rect.width = viewRect.width * 0.3f;
 					if (Widgets.ButtonText(rect, "RD.Add".Translate()))
 					{
-						thingGroup.thingDefs.Add(thingDef);
-						if (!ThingDictionaryMod.settings.thingSettings.TryGetValue(thingGroup.thingKey, out var resourceGroup))
-                        {
-							ThingDictionaryMod.settings.thingSettings[thingGroup.thingKey] = resourceGroup = new ThingGroupExposable();
-						}
-						resourceGroup.thingDefs.Add(thingDef.defName);
-						SoundDefOf.Click.PlayOneShotOnCamera();
+						thingGroup.thingDefs.Add(thingDef.defName);
+                        thingGroup.removedDefs.Remove(thingDef.defName);
+                        SoundDefOf.Click.PlayOneShotOnCamera();
 						this.Close();
 					}
 					num += 35f;

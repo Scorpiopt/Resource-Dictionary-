@@ -1,5 +1,8 @@
-﻿using System.Collections.Generic;
+﻿using RimWorld;
+using System;
+using System.Collections.Generic;
 using System.Linq;
+using System.Security.Cryptography;
 using UnityEngine;
 using Verse;
 
@@ -9,9 +12,9 @@ namespace Deduplicator
     {
         public ThingDictionarySettings()
         {
-            thingSettings = new Dictionary<string, ThingGroupExposable>();
+            thingSettings = new Dictionary<string, ThingGroup>();
         }
-        public Dictionary<string, ThingGroupExposable> thingSettings = new Dictionary<string, ThingGroupExposable>();
+        public Dictionary<string, ThingGroup> thingSettings = new Dictionary<string, ThingGroup>();
         public override void ExposeData()
         {
             base.ExposeData();
@@ -20,69 +23,85 @@ namespace Deduplicator
             {
                 if (thingSettings is null)
                 {
-                    thingSettings = new Dictionary<string, ThingGroupExposable>();
+                    thingSettings = new Dictionary<string, ThingGroup>();
                 }
             }
         }
 
         string searchKey;
+
+        public List<ThingGroup> curThingGroups;
         public void DoSettingsWindowContents(Rect inRect)
         {
             Rect rect = new Rect(inRect.x, inRect.y, inRect.width, inRect.height);
-            string title = "RD.ThingGroups".Translate();
-            Text.Font = GameFont.Medium;
-            var titleWidth = Text.CalcSize(title);
-            var titleRect = new Rect(rect.center.x - titleWidth.x, rect.y, titleWidth.x, titleWidth.y);
-            Widgets.Label(titleRect, title);
-            Text.Font = GameFont.Small;
             Text.Anchor = TextAnchor.MiddleLeft;
-            var searchLabel = new Rect(rect.x + 5, titleRect.yMax + 5, 60, 24);
+            var searchLabel = new Rect(rect.x + 5, rect.y, 60, 24);
             Widgets.Label(searchLabel, "RD.Search".Translate());
             var searchRect = new Rect(searchLabel.xMax + 5, searchLabel.y, 200, 24f);
             searchKey = Widgets.TextField(searchRect, searchKey);
             Text.Anchor = TextAnchor.UpperLeft;
 
-            var thingGroups = (searchKey.NullOrEmpty() ? 
-                Core.thingGroupsByKeys.Values :
-                Core.thingGroupsByKeys.Values.Where(x => x.thingKey.ToLower().Contains(searchKey.ToLower()))).Where(x => x.thingDefs.Count > 1).ToList();
-            var height = GetScrollHeight(thingGroups);
+            var thingGroups = (searchKey.NullOrEmpty() ?
+                curThingGroups :
+                curThingGroups.Where(x => x.thingKey.ToLower().Contains(searchKey.ToLower()))).Where(x => x.FirstDef != null)
+                .ToList();
 
+            var height = GetScrollHeight(thingGroups);
             Rect outerRect = new Rect(rect.x, searchRect.yMax + 10, rect.width, rect.height - 70);
             Rect viewArea = new Rect(rect.x, outerRect.y, rect.width - 16, height);
             Widgets.BeginScrollView(outerRect, ref scrollPosition, viewArea, true);
-
             Vector2 outerPos = new Vector2(rect.x + 5, outerRect.y);
+            float num = 0;
             foreach (var thingGroup in thingGroups)
             {
-                var labelRect = new Rect(outerPos.x, outerPos.y, 200, 30f);
-                Text.Font = GameFont.Medium;
-                Widgets.Label(labelRect, Core.GetThingKeyBase(thingGroup.thingDefs.First()).CapitalizeFirst());
-                Text.Font = GameFont.Small;
-                var innerPos = new Vector2(outerPos.x + 10, labelRect.yMax);
-                foreach (var thingDef in thingGroup.thingDefs.ToList())
+                num += (thingGroup.thingDefs.Count * 28f) + (24 + 32 + 30);
+                //if (num >= scrollPosition.y && num <= (scrollPosition.y + 2000))
                 {
-                    if (Widgets.RadioButton(new Vector2(innerPos.x, innerPos.y), thingGroup.mainThingDef == thingDef))
+                    var labelRect = new Rect(outerPos.x, outerPos.y, 200, 30f);
+                    Widgets.Label(labelRect, Core.GetThingKeyBase(thingGroup.FirstDef).CapitalizeFirst());
+                    Widgets.Checkbox(new Vector2(labelRect.xMax, labelRect.y), ref thingGroup.deduplicationEnabled);
+                    var innerPos = new Vector2(outerPos.x + 10, labelRect.yMax);
+                    var toRemove = "";
+                    foreach (var defName in thingGroup.thingDefs.ToList())
                     {
-                        thingGroup.mainThingDef = thingDef;
+                        var def = DefDatabase<ThingDef>.GetNamed(defName);
+                        if (Widgets.RadioButton(new Vector2(innerPos.x, innerPos.y), thingGroup.mainThingDefName == defName))
+                        {
+                            thingGroup.mainThingDefName = defName;
+                        }
+                        var iconRect = new Rect(innerPos.x + 30, innerPos.y, 24, 24);
+                        Widgets.InfoCardButton(iconRect, def);
+                        iconRect.x += 24;
+                        Widgets.ThingIcon(iconRect, def);
+                        var name = defName + " - " + def.LabelCap + " [" + (def.modContentPack?.Name ?? "RD.UnknownMod".Translate()) + "]";
+                        var labelRect2 = new Rect(iconRect.xMax + 15, innerPos.y, Text.CalcSize(name).x + 10, 24f);
+                        Widgets.Label(labelRect2, name);
+                        var removeRect = new Rect(labelRect2.xMax + 5, labelRect2.y, 20, 21f);
+                        if (Widgets.ButtonImage(removeRect, TexButton.DeleteX))
+                        {
+                            toRemove = defName;
+                        }
+                        innerPos.y += 28;
+                        outerPos.y += 28;
                     }
-                    var name = thingDef.defName + " - " + thingDef.LabelCap + " [" + (thingDef.modContentPack?.Name ?? "RD.UnknownMod".Translate()) + "]";
-                    var labelRect2 = new Rect(innerPos.x + 30, innerPos.y, Text.CalcSize(name).x + 10, 24f);
-                    Widgets.Label(labelRect2, name);
-                    innerPos.y += 24;
-                    outerPos.y += 24;
-                }
-                var addNewStuff = new Rect(innerPos.x, innerPos.y, 200, 24f);
-                if (Widgets.ButtonText(addNewStuff, "RD.AddNewThing".Translate()))
-                {
-                    var window = new Dialog_AddNewThing(thingGroup);
-                    Find.WindowStack.Add(window);
-                }
-                outerPos.y += 24;
-                outerPos.y += 32;
-            }
 
+                    if (!toRemove.NullOrEmpty())
+                    {
+                        thingGroup.thingDefs.Remove(toRemove);
+                        thingGroup.removedDefs.Add(toRemove);
+                    }
+
+                    var addNewStuff = new Rect(innerPos.x, innerPos.y, 200, 24f);
+                    if (Widgets.ButtonText(addNewStuff, "RD.AddNewThing".Translate()))
+                    {
+                        var window = new Dialog_AddNewThing(thingGroup);
+                        Find.WindowStack.Add(window);
+                    }
+                    outerPos.y += 24;
+                    outerPos.y += 32;
+                }
+            }
             Widgets.EndScrollView();
-            base.Write();
         }
 
         private float GetScrollHeight(List<ThingGroup> thingGroups)
@@ -94,7 +113,7 @@ namespace Deduplicator
                 num += 24;
                 foreach (var thingDef in group.thingDefs)
                 {
-                    num += 24f;
+                    num += 28f;
                 }
             }
             return num;
