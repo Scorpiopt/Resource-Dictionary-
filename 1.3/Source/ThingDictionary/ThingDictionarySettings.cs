@@ -52,17 +52,22 @@ namespace Deduplicator
             Widgets.BeginScrollView(outerRect, ref scrollPosition, viewArea, true);
             Vector2 outerPos = new Vector2(rect.x + 5, outerRect.y);
             float num = 0;
+            var entryHeight = 200;
             foreach (var thingGroup in thingGroups)
             {
-                num += (thingGroup.thingDefs.Count * 28f) + (24 + 32 + 30);
-                //if (num >= scrollPosition.y && num <= (scrollPosition.y + 2000))
+                bool canDrawGroup = num >= scrollPosition.y - entryHeight && num <= (scrollPosition.y + outerRect.height);
+                var curNum = outerPos.y;
+                var labelRect = new Rect(outerPos.x, outerPos.y, 200, 30f);
+                if (canDrawGroup)
                 {
-                    var labelRect = new Rect(outerPos.x, outerPos.y, 200, 30f);
                     Widgets.Label(labelRect, Core.GetThingKeyBase(thingGroup.FirstDef).CapitalizeFirst());
                     Widgets.Checkbox(new Vector2(labelRect.xMax, labelRect.y), ref thingGroup.deduplicationEnabled);
-                    var innerPos = new Vector2(outerPos.x + 10, labelRect.yMax);
-                    var toRemove = "";
-                    foreach (var defName in thingGroup.thingDefs.ToList())
+                }
+                var innerPos = new Vector2(outerPos.x + 10, labelRect.yMax);
+                var toRemove = "";
+                foreach (var defName in thingGroup.thingDefs.ToList())
+                {
+                    if (canDrawGroup)
                     {
                         var def = DefDatabase<ThingDef>.GetNamed(defName);
                         if (Widgets.RadioButton(new Vector2(innerPos.x, innerPos.y), thingGroup.mainThingDefName == defName))
@@ -82,25 +87,29 @@ namespace Deduplicator
                             toRemove = defName;
                         }
                         innerPos.y += 28;
-                        outerPos.y += 28;
                     }
+                    outerPos.y += 28;
+                }
+                outerPos.y += 24;
+                outerPos.y += 32;
 
-                    if (!toRemove.NullOrEmpty())
-                    {
-                        thingGroup.thingDefs.Remove(toRemove);
-                        thingGroup.removedDefs.Add(toRemove);
-                    }
-
+                if (!toRemove.NullOrEmpty())
+                {
+                    thingGroup.thingDefs.Remove(toRemove);
+                    thingGroup.removedDefs.Add(toRemove);
+                }
+                if (canDrawGroup)
+                {
                     var addNewStuff = new Rect(innerPos.x, innerPos.y, 200, 24f);
                     if (Widgets.ButtonText(addNewStuff, "RD.AddNewThing".Translate()))
                     {
                         var window = new Dialog_AddNewThing(thingGroup);
                         Find.WindowStack.Add(window);
                     }
-                    outerPos.y += 24;
-                    outerPos.y += 32;
                 }
+                num += (outerPos.y - curNum);
             }
+            
             Widgets.EndScrollView();
         }
 

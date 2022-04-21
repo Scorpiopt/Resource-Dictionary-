@@ -45,8 +45,8 @@ namespace Deduplicator
 			outRect.yMax -= 70f;
 			outRect.width -= 16f;
 
-			var thingDefs = searchKey.NullOrEmpty() ? Core.allSpawnableDefs.ToList() 
-				: Core.allSpawnableDefs.Where(x => x.label.ToLower().Contains(searchKey.ToLower())).ToList();
+			var thingDefs = searchKey.NullOrEmpty() ? Core.processedDefs.ToList() 
+				: Core.processedDefs.Where(x => x.label.ToLower().Contains(searchKey.ToLower())).ToList();
 
 			Rect viewRect = new Rect(0f, 0f, outRect.width - 16f, (float)thingDefs.Count() * 35f);
 			Widgets.BeginScrollView(outRect, ref scrollPosition, viewRect);

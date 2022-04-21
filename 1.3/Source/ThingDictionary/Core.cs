@@ -16,6 +16,16 @@ using Verse.AI;
 
 namespace Deduplicator
 {
+    [HarmonyPatch(typeof(Game), "FinalizeInit")]
+    public class Game_FinalizeInit_Patch
+    {
+        public static void Postfix()
+        {
+            Core.TryFormThingGroups();
+            Core.ProcessRecipes();
+        }
+    }
+    
     [StaticConstructorOnStartup]
     public static class Core
     {
@@ -24,73 +34,117 @@ namespace Deduplicator
             TryFormThingGroups();
         }
 
-        public static bool formedThingGroups;
-        public static List<ThingDef> allSpawnableDefs;
+        public static HashSet<ThingDef> processedDefs = new HashSet<ThingDef>();
         public static void TryFormThingGroups()
         {
-            if (!formedThingGroups)
+            var defsToProcess = DefDatabase<ThingDef>.AllDefs.Where(x => !processedDefs.Contains(x) && x.IsSpawnable()).ToList();
+            if (defsToProcess.Any())
             {
                 if (ThingDictionaryMod.settings.thingSettings is null)
                 {
                     ThingDictionaryMod.settings.thingSettings = new Dictionary<string, ThingGroup>();
                 }
-                allSpawnableDefs = DefDatabase<ThingDef>.AllDefs.Where(x => x.IsSpawnable()).ToList();
-                Log.Message("[Deduplicator] Forming duplicate groups, processing " + allSpawnableDefs.Count + " defs.");
-                foreach (var thingDef in allSpawnableDefs)
-                {
-                    var thingKey = GetThingKey(thingDef);
-                    if (!thingKey.NullOrEmpty())
-                    {
-                        if (!ThingDictionaryMod.settings.thingSettings.TryGetValue(thingKey, out var group))
-                        {
-                            ThingDictionaryMod.settings.thingSettings[thingKey] = group = new ThingGroup
-                            {
-                                thingKey = thingKey,
-                                thingDefs = new List<string>(),
-                                removedDefs = new List<string>(),
-                            };
-                        }
-                        if (!group.removedDefs.Contains(thingDef.defName))
-                        {
-                            group.thingDefs.Add(thingDef.defName);
-                        }
-                    }
-                }
-                
-                foreach (var group in ThingDictionaryMod.settings.thingSettings.Values)
-                {
-                    if (group.thingDefs.Any())
-                    {
-                        if (!group.mainThingDefName.NullOrEmpty())
-                        {
-                            var def = DefDatabase<ThingDef>.GetNamedSilentFail(group.mainThingDefName);
-                            if (def != null)
-                            {
-                                group.mainThingDefName = def.defName;
-                            }
-                            else
-                            {
-                                group.mainThingDefName = group.thingDefs.First();
-                            }
-                        }
-                        else
-                        {
-                            group.mainThingDefName = group.thingDefs.First();
-                        }
-                        group.mainThingDef = DefDatabase<ThingDef>.GetNamed(group.mainThingDefName);
-
-                        //if (group.thingDefs.Count > 1)
-                        //{
-                        //    Log.Message("Main thing def: " + group.mainThingDef + ", will replace following things: " + String.Join(", ", group.thingDefs.Where(x => x != group.mainThingDef)));
-                        //}
-                    }
-                }
-                formedThingGroups = true;
 
                 if (ThingDictionaryMod.settings.curThingGroups is null)
                 {
                     ThingDictionaryMod.settings.curThingGroups = ThingDictionaryMod.settings.thingSettings.Values
                         .OrderByDescending(x => x.thingDefs.Count).ThenBy(x => x.thingKey).ToList();
+                }
+                
+                foreach (var def in defsToProcess)
+                {
+                    ProcessDef(def);
+                }
+                ProcessGroups();
+            }
+            
+
+        }
+        public static void ProcessGroups()
+        {
+            foreach (var group in ThingDictionaryMod.settings.thingSettings.Values)
+            {
+                if (group.thingDefs.Any())
+                {
+                    if (!group.mainThingDefName.NullOrEmpty())
+                    {
+                        var def = DefDatabase<ThingDef>.GetNamedSilentFail(group.mainThingDefName);
+                        if (def != null)
+                        {
+                            group.mainThingDefName = def.defName;
+                        }
+                    }
+                    else
+                    {
+                        group.mainThingDefName = group.thingDefs.First();
+                    }
+                    group.mainThingDef = DefDatabase<ThingDef>.GetNamed(group.mainThingDefName);
+
+                    //if (group.thingDefs.Count > 1)
+                    //{
+                    //    Log.Message("Main thing def: " + group.mainThingDef + ", will replace following things: " + String.Join(", ", group.thingDefs.Where(x => x != group.mainThingDef)));
+                    //}
+                }
+            }
+        }
+        public static void ProcessDef(ThingDef thingDef)
+        {
+            var thingKey = GetThingKey(thingDef);
+            if (!thingKey.NullOrEmpty())
+            {
+                if (!ThingDictionaryMod.settings.thingSettings.TryGetValue(thingKey, out var group))
+                {
+                    ThingDictionaryMod.settings.thingSettings[thingKey] = group = new ThingGroup
+                    {
+                        thingKey = thingKey,
+                        thingDefs = new List<string>(),
+                        removedDefs = new List<string>(),
+                    };
+                }
+                if (!group.removedDefs.Contains(thingDef.defName))
+                {
+                    Log.Message("Adding group for " + thingDef.defName);
+                    group.thingDefs.Add(thingDef.defName);
+                }
+            }
+            processedDefs.Add(thingDef);
+        }
+
+        public static void ProcessRecipes()
+        {
+            var defs = DefDatabase<RecipeDef>.AllDefsListForReading.ListFullCopy();
+            Log.Message("[Deduplicator] Processing " + defs.Count + " recipes.");
+            var processedRecipes = new HashSet<RecipeDef>();
+            foreach (var originalRecipe in defs)
+            {
+                originalRecipe.ResolveReferences();
+                if (processedRecipes.Any(x => x.label == originalRecipe.label && x.products.Count == 1 && originalRecipe.products.Count == 1
+                    && x.ProducedThingDef == originalRecipe.ProducedThingDef && x.products[0].count == originalRecipe.products[0].count))
+                {
+                    DefDatabase<RecipeDef>.Remove(originalRecipe);
+                    originalRecipe.ClearRemovedRecipesFromRecipeUsers();
+                    Log.Message("[Deduplicator] Removed duplicate recipe " + originalRecipe.label);
+                }
+                processedRecipes.Add(originalRecipe);
+            }
+        }
+
+        public static void ClearRemovedRecipesFromRecipeUsers(this RecipeDef recipeDef)
+        {
+            if (recipeDef.recipeUsers != null)
+            {
+                foreach (var recipeUser in recipeDef.recipeUsers)
+                {
+                    if (recipeUser.allRecipesCached != null)
+                    {
+                        for (int i = recipeUser.allRecipesCached.Count - 1; i >= 0; i--)
+                        {
+                            if (recipeUser.allRecipesCached[i] == recipeDef)
+                            {
+                                recipeUser.allRecipesCached.RemoveAt(i);
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -107,23 +161,8 @@ namespace Deduplicator
             {
                 return false;
             }
-            if (def.IsBuildingArtificial && def.designationCategory is null)
-            {
-                return false;
-            }
-            if (def.category == ThingCategory.Item || def.category == ThingCategory.Plant || def.category == ThingCategory.Pawn)
-            {
-                return true;
-            }
-            if (def.category == ThingCategory.Building && def.building.isNaturalRock)
-            {
-                return true;
-            }
-            if (def.category == ThingCategory.Building && !def.BuildableByPlayer)
-            {
-                return true;
-            }
-            if (def.category == ThingCategory.Building && def.BuildableByPlayer)
+            if (def.category == ThingCategory.Item || def.category == ThingCategory.Plant || def.category == ThingCategory.Pawn 
+                || def.category == ThingCategory.Building)
             {
                 return true;
             }
@@ -171,16 +210,32 @@ namespace Deduplicator
             if (__result != null)
             {
                 var group = __result.GetGroup();
+                if (group is null)
+                {
+                    if (__result.IsSpawnable() && !Core.processedDefs.Contains(__result))
+                    {
+                        Log.Message("Missing group for " + __result);
+                        try
+                        {
+                            Core.processedDefs.Add(__result);
+                            Core.ProcessDef(__result);
+                            Core.ProcessGroups();
+                            group = __result.GetGroup();
+                        }
+                        catch
+                        {
+                            Log.Message("Failed to process " + __result);
+                        }
+                    }
+                }
                 if (group != null && group.mainThingDef != __result)
                 {
-                    Log.Message("1 Replacing def: " + __result + " with " + group.mainThingDefName);
-                    Log.ResetMessageCount();
                     __result = group.mainThingDef;
                 }
             }
         }
     }
-
+    
     [HarmonyPatch(typeof(GenDefDatabase), "GetDef")]
     public static class GenDefDatabase_GetDef
     {  
@@ -194,10 +249,26 @@ namespace Deduplicator
             if (__result is ThingDef thingDef)
             {
                 var group = thingDef.GetGroup();
+                if (group is null)
+                {
+                    if (thingDef.IsSpawnable() && !Core.processedDefs.Contains(thingDef))
+                    {
+                        Log.Message("Missing group for " + thingDef);
+                        try
+                        {
+                            Core.processedDefs.Add(thingDef);
+                            Core.ProcessDef(thingDef);
+                            Core.ProcessGroups();
+                            group = thingDef.GetGroup();
+                        }
+                        catch
+                        {
+                            Log.Message("Failed to process " + thingDef);
+                        }
+                    }
+                }
                 if (group != null && group.mainThingDef != thingDef)
                 {
-                    Log.Message("2 Replacing def: " + thingDef + " with " + group.mainThingDefName);
-                    Log.ResetMessageCount();
                     __result = group.mainThingDef;
                 }
             }
@@ -220,14 +291,30 @@ namespace Deduplicator
         {
             if (typeof(ThingDef).IsAssignableFrom(defType))
             {
-                var thingDef = GenDefDatabase.GetDefSilentFail(defType, defName) as ThingDef;
+                var thingDef = GenDefDatabase.GetDefSilentFail(defType, __result) as ThingDef;
                 if (thingDef != null)
                 {
                     var group = thingDef.GetGroup();
-                    if (group != null && group.mainThingDefName != thingDef.defName)
+                    if (group is null)
                     {
-                        Log.Message("3 Replacing def: " + thingDef + " with " + group.mainThingDefName);
-                        Log.ResetMessageCount();
+                        if (thingDef.IsSpawnable() && !Core.processedDefs.Contains(thingDef))
+                        {
+                            Log.Message("Missing group for " + thingDef);
+                            try
+                            {
+                                Core.processedDefs.Add(thingDef);
+                                Core.ProcessDef(thingDef);
+                                Core.ProcessGroups();
+                                group = thingDef.GetGroup();
+                            }
+                            catch
+                            {
+                                Log.Message("Failed to process " + thingDef);
+                            }
+                        }
+                    }
+                    if (group != null && group.mainThingDefName != __result)
+                    {
                         __result = group.mainThingDefName;
                     }
                 }
