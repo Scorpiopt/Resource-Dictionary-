@@ -6,11 +6,11 @@ using System.Security.Cryptography;
 using UnityEngine;
 using Verse;
 
-namespace Deduplicator
+namespace ResourceDictionary
 {
-    class ThingDictionarySettings : ModSettings
+    class ResourceDictionarySettings : ModSettings
     {
-        public ThingDictionarySettings()
+        public ResourceDictionarySettings()
         {
             thingSettings = new Dictionary<string, ThingGroup>();
         }
@@ -41,10 +41,8 @@ namespace Deduplicator
             searchKey = Widgets.TextField(searchRect, searchKey);
             Text.Anchor = TextAnchor.UpperLeft;
 
-            var thingGroups = (searchKey.NullOrEmpty() ?
-                curThingGroups :
-                curThingGroups.Where(x => x.thingKey.ToLower().Contains(searchKey.ToLower()))).Where(x => x.FirstDef != null)
-                .ToList();
+            var thingGroups = (searchKey.NullOrEmpty() ? curThingGroups : curThingGroups.Where(x => x.thingKey.ToLower().Contains(searchKey.ToLower())))
+                .Where(x => x.FirstDef != null).ToList();
 
             var height = GetScrollHeight(thingGroups);
             Rect outerRect = new Rect(rect.x, searchRect.yMax + 10, rect.width, rect.height - 70);

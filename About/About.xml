@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ModMetaData>
-	<name>Deduplicator</name>
+	<name>Resource Dictionary</name>
 	<author>Scorpio, Taranchuk</author>
 	<supportedVersions>
       <li>1.3</li>
    </supportedVersions>
-   <packageId>Scorpio.Deduplicator</packageId>
+   <packageId>Scorpio.ResourceDictionary</packageId>
    <modDependencies>
 		<li>
 			<packageId>brrainz.harmony</packageId>

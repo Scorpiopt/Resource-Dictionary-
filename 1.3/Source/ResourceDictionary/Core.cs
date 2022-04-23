@@ -14,7 +14,7 @@ using UnityEngine;
 using Verse;
 using Verse.AI;
 
-namespace Deduplicator
+namespace ResourceDictionary
 {
     [HarmonyPatch(typeof(Game), "FinalizeInit")]
     public class Game_FinalizeInit_Patch
@@ -37,20 +37,15 @@ namespace Deduplicator
         public static HashSet<ThingDef> processedDefs = new HashSet<ThingDef>();
         public static void TryFormThingGroups()
         {
+            Log.Message("Forming thing groups");
             var defsToProcess = DefDatabase<ThingDef>.AllDefs.Where(x => !processedDefs.Contains(x) && x.IsSpawnable()).ToList();
             if (defsToProcess.Any())
             {
-                if (ThingDictionaryMod.settings.thingSettings is null)
+                if (ResourceDictionaryMod.settings.thingSettings is null)
                 {
-                    ThingDictionaryMod.settings.thingSettings = new Dictionary<string, ThingGroup>();
+                    ResourceDictionaryMod.settings.thingSettings = new Dictionary<string, ThingGroup>();
                 }
 
-                if (ThingDictionaryMod.settings.curThingGroups is null)
-                {
-                    ThingDictionaryMod.settings.curThingGroups = ThingDictionaryMod.settings.thingSettings.Values
-                        .OrderByDescending(x => x.thingDefs.Count).ThenBy(x => x.thingKey).ToList();
-                }
-                
                 foreach (var def in defsToProcess)
                 {
                     ProcessDef(def);
@@ -62,7 +57,7 @@ namespace Deduplicator
         }
         public static void ProcessGroups()
         {
-            foreach (var group in ThingDictionaryMod.settings.thingSettings.Values)
+            foreach (var group in ResourceDictionaryMod.settings.thingSettings.Values)
             {
                 if (group.thingDefs.Any())
                 {
@@ -78,7 +73,6 @@ namespace Deduplicator
                     {
                         group.mainThingDefName = group.thingDefs.First();
                     }
-                    group.mainThingDef = DefDatabase<ThingDef>.GetNamed(group.mainThingDefName);
 
                     //if (group.thingDefs.Count > 1)
                     //{
@@ -86,24 +80,25 @@ namespace Deduplicator
                     //}
                 }
             }
+            ResourceDictionaryMod.settings.curThingGroups = ResourceDictionaryMod.settings.thingSettings.Values
+                .OrderByDescending(x => x.thingDefs.Count).ThenBy(x => x.thingKey).ToList();
         }
         public static void ProcessDef(ThingDef thingDef)
         {
             var thingKey = GetThingKey(thingDef);
             if (!thingKey.NullOrEmpty())
             {
-                if (!ThingDictionaryMod.settings.thingSettings.TryGetValue(thingKey, out var group))
+                if (!ResourceDictionaryMod.settings.thingSettings.TryGetValue(thingKey, out var group))
                 {
-                    ThingDictionaryMod.settings.thingSettings[thingKey] = group = new ThingGroup
+                    ResourceDictionaryMod.settings.thingSettings[thingKey] = group = new ThingGroup
                     {
                         thingKey = thingKey,
                         thingDefs = new List<string>(),
                         removedDefs = new List<string>(),
                     };
                 }
-                if (!group.removedDefs.Contains(thingDef.defName))
+                if (!group.removedDefs.Contains(thingDef.defName) && !group.thingDefs.Contains(thingDef.defName))
                 {
-                    Log.Message("Adding group for " + thingDef.defName);
                     group.thingDefs.Add(thingDef.defName);
                 }
             }
@@ -113,7 +108,7 @@ namespace Deduplicator
         public static void ProcessRecipes()
         {
             var defs = DefDatabase<RecipeDef>.AllDefsListForReading.ListFullCopy();
-            Log.Message("[Deduplicator] Processing " + defs.Count + " recipes.");
+            //Log.Message("[Resource Dictionary] Processing " + defs.Count + " recipes.");
             var processedRecipes = new HashSet<RecipeDef>();
             foreach (var originalRecipe in defs)
             {
@@ -123,7 +118,7 @@ namespace Deduplicator
                 {
                     DefDatabase<RecipeDef>.Remove(originalRecipe);
                     originalRecipe.ClearRemovedRecipesFromRecipeUsers();
-                    Log.Message("[Deduplicator] Removed duplicate recipe " + originalRecipe.label);
+                    //Log.Message("[Resource Dictionary] Removed duplicate recipe " + originalRecipe.label);
                 }
                 processedRecipes.Add(originalRecipe);
             }
@@ -184,7 +179,7 @@ namespace Deduplicator
         }
         public static ThingGroup GetGroup(this ThingDef thingDef)
         {
-            if (ThingDictionaryMod.settings.thingSettings.TryGetValue(thingDef.GetThingKey(), out var resourceGroup) 
+            if (ResourceDictionaryMod.settings.thingSettings.TryGetValue(thingDef.GetThingKey(), out var resourceGroup) 
                 && resourceGroup.deduplicationEnabled)
             {
                 return resourceGroup;
@@ -214,7 +209,7 @@ namespace Deduplicator
                 {
                     if (__result.IsSpawnable() && !Core.processedDefs.Contains(__result))
                     {
-                        Log.Message("Missing group for " + __result);
+                        //Log.Message("Missing group for " + __result);
                         try
                         {
                             Core.processedDefs.Add(__result);
@@ -224,13 +219,13 @@ namespace Deduplicator
                         }
                         catch
                         {
-                            Log.Message("Failed to process " + __result);
+                            //Log.Message("Failed to process " + __result);
                         }
                     }
                 }
-                if (group != null && group.mainThingDef != __result)
+                if (group != null && group.MainThingDef != __result)
                 {
-                    __result = group.mainThingDef;
+                    __result = group.MainThingDef;
                 }
             }
         }
@@ -253,7 +248,7 @@ namespace Deduplicator
                 {
                     if (thingDef.IsSpawnable() && !Core.processedDefs.Contains(thingDef))
                     {
-                        Log.Message("Missing group for " + thingDef);
+                        //Log.Message("Missing group for " + thingDef);
                         try
                         {
                             Core.processedDefs.Add(thingDef);
@@ -263,13 +258,13 @@ namespace Deduplicator
                         }
                         catch
                         {
-                            Log.Message("Failed to process " + thingDef);
+                            //Log.Message("Failed to process " + thingDef);
                         }
                     }
                 }
-                if (group != null && group.mainThingDef != thingDef)
+                if (group != null && group.MainThingDef != thingDef)
                 {
-                    __result = group.mainThingDef;
+                    __result = group.MainThingDef;
                 }
             }
         }
@@ -299,7 +294,7 @@ namespace Deduplicator
                     {
                         if (thingDef.IsSpawnable() && !Core.processedDefs.Contains(thingDef))
                         {
-                            Log.Message("Missing group for " + thingDef);
+                            //Log.Message("Missing group for " + thingDef);
                             try
                             {
                                 Core.processedDefs.Add(thingDef);
@@ -309,7 +304,7 @@ namespace Deduplicator
                             }
                             catch
                             {
-                                Log.Message("Failed to process " + thingDef);
+                                //Log.Message("Failed to process " + thingDef);
                             }
                         }
                     }

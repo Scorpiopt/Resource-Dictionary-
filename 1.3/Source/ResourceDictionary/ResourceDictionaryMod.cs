@@ -10,27 +10,22 @@ using UnityEngine;
 using Verse;
 using Verse.AI;
 
-namespace Deduplicator
+namespace ResourceDictionary
 {
-    class ThingDictionaryMod : Mod
+    class ResourceDictionaryMod : Mod
     {
-        public static ThingDictionarySettings settings;
-        public ThingDictionaryMod(ModContentPack pack) : base(pack)
+        public static ResourceDictionarySettings settings;
+        public ResourceDictionaryMod(ModContentPack pack) : base(pack)
         {
-            settings = GetSettings<ThingDictionarySettings>();
-            new Harmony("ThingDictionary.Mod").PatchAll();
+            settings = GetSettings<ResourceDictionarySettings>();
+            new Harmony("ResourceDictionary.Mod").PatchAll();
         }
         public override void DoSettingsWindowContents(Rect inRect)
         {
             base.DoSettingsWindowContents(inRect);
             settings.DoSettingsWindowContents(inRect);
         }
-
-        public override void WriteSettings()
-        {
-            base.WriteSettings();
-            settings.curThingGroups = null;
-        }
+        
         public override string SettingsCategory()
         {
             return this.Content.Name;
