@@ -40,12 +40,21 @@ namespace ResourceDictionary
             var searchRect = new Rect(searchLabel.xMax + 5, searchLabel.y, 200, 24f);
             searchKey = Widgets.TextField(searchRect, searchKey);
             Text.Anchor = TextAnchor.UpperLeft;
-
+            var explanationTitleRect = new Rect(searchRect.xMax + 15, searchRect.y, inRect.width - (searchLabel.width + searchRect.width + 35), 54f);
+            Widgets.Label(explanationTitleRect, "RD.ExplanationTitle".Translate());
             var thingGroups = (searchKey.NullOrEmpty() ? curThingGroups : curThingGroups.Where(x => x.thingKey.ToLower().Contains(searchKey.ToLower())))
                 .Where(x => x.FirstDef != null).ToList();
 
+            var resetRect = new Rect(searchLabel.x, searchLabel.yMax + 5, 265, 24f);
+            if (Widgets.ButtonText(resetRect, "Reset".Translate()))
+            {
+                thingSettings = new Dictionary<string, ThingGroup>();
+                Core.processedDefs.Clear();
+                Core.TryFormThingGroups();
+                curThingGroups = thingSettings.Values.OrderByDescending(x => x.thingDefs.Count).ThenBy(x => x.thingKey).ToList();
+            }
             var height = GetScrollHeight(thingGroups);
-            Rect outerRect = new Rect(rect.x, searchRect.yMax + 10, rect.width, rect.height - 70);
+            Rect outerRect = new Rect(rect.x, searchRect.yMax + 35, rect.width, rect.height - 70);
             Rect viewArea = new Rect(rect.x, outerRect.y, rect.width - 16, height);
             Widgets.BeginScrollView(outerRect, ref scrollPosition, viewArea, true);
             Vector2 outerPos = new Vector2(rect.x + 5, outerRect.y);
@@ -55,13 +64,19 @@ namespace ResourceDictionary
             {
                 bool canDrawGroup = num >= scrollPosition.y - entryHeight && num <= (scrollPosition.y + outerRect.height);
                 var curNum = outerPos.y;
-                var labelRect = new Rect(outerPos.x, outerPos.y, 200, 30f);
+                var sectionRect = new Rect(outerPos.x - 5, outerPos.y, viewArea.width, 5 + 35f + 24 + (thingGroup.thingDefs.ToList().Count * 28));
+                Widgets.DrawMenuSection(sectionRect);
+                var labelRect = new Rect(outerPos.x + 5, outerPos.y + 5, 200, 35f);
                 if (canDrawGroup)
                 {
                     Widgets.Label(labelRect, Core.GetThingKeyBase(thingGroup.FirstDef).CapitalizeFirst());
-                    Widgets.Checkbox(new Vector2(labelRect.xMax, labelRect.y), ref thingGroup.deduplicationEnabled);
+                    var pos = new Vector2(viewArea.width - 220, labelRect.y);
+                    Widgets.Checkbox(pos, ref thingGroup.deduplicationEnabled);
+                    var activateGroupRect = new Rect(pos.x + 24 + 10, pos.y, 200, 24);
+                    Widgets.Label(activateGroupRect, "RD.ActivateDeduplication".Translate());
                 }
-                var innerPos = new Vector2(outerPos.x + 10, labelRect.yMax);
+                outerPos.y += 35f;
+                var innerPos = new Vector2(outerPos.x + 10, outerPos.y);
                 var toRemove = "";
                 foreach (var defName in thingGroup.thingDefs.ToList())
                 {
@@ -79,8 +94,8 @@ namespace ResourceDictionary
                         var name = defName + " - " + def.LabelCap + " [" + (def.modContentPack?.Name ?? "RD.UnknownMod".Translate()) + "]";
                         var labelRect2 = new Rect(iconRect.xMax + 15, innerPos.y, Text.CalcSize(name).x + 10, 24f);
                         Widgets.Label(labelRect2, name);
-                        var removeRect = new Rect(labelRect2.xMax + 5, labelRect2.y, 20, 21f);
-                        if (Widgets.ButtonImage(removeRect, TexButton.DeleteX))
+                        var removeRect = new Rect(viewArea.width - 220, labelRect2.y, 200, 24);
+                        if (Widgets.ButtonText(removeRect, "RD.RemoveFromThisGroup".Translate()))
                         {
                             toRemove = defName;
                         }
@@ -89,8 +104,7 @@ namespace ResourceDictionary
                     outerPos.y += 28;
                 }
                 outerPos.y += 24;
-                outerPos.y += 32;
-
+                outerPos.y += 12f; // separates sections
                 if (!toRemove.NullOrEmpty())
                 {
                     thingGroup.thingDefs.Remove(toRemove);
@@ -116,12 +130,13 @@ namespace ResourceDictionary
             float num = 0;
             foreach (var group in thingGroups)
             {
-                num += 32;
+                num += 35;
                 num += 24;
                 foreach (var thingDef in group.thingDefs)
                 {
                     num += 28f;
                 }
+                num += 12f;
             }
             return num;
         }

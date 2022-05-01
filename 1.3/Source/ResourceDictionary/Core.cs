@@ -243,29 +243,34 @@ namespace ResourceDictionary
         {
             if (__result is ThingDef thingDef)
             {
-                var group = thingDef.GetGroup();
-                if (group is null)
+                TryModifyResult(ref thingDef);
+            }
+        }
+
+        public static void TryModifyResult(ref ThingDef thingDef)
+        {
+            var group = thingDef.GetGroup();
+            if (group is null)
+            {
+                if (thingDef.IsSpawnable() && !Core.processedDefs.Contains(thingDef))
                 {
-                    if (thingDef.IsSpawnable() && !Core.processedDefs.Contains(thingDef))
+                    //Log.Message("Missing group for " + thingDef);
+                    try
                     {
-                        //Log.Message("Missing group for " + thingDef);
-                        try
-                        {
-                            Core.processedDefs.Add(thingDef);
-                            Core.ProcessDef(thingDef);
-                            Core.ProcessGroups();
-                            group = thingDef.GetGroup();
-                        }
-                        catch
-                        {
-                            //Log.Message("Failed to process " + thingDef);
-                        }
+                        Core.processedDefs.Add(thingDef);
+                        Core.ProcessDef(thingDef);
+                        Core.ProcessGroups();
+                        group = thingDef.GetGroup();
+                    }
+                    catch
+                    {
+                        //Log.Message("Failed to process " + thingDef);
                     }
                 }
-                if (group != null && group.MainThingDef != thingDef)
-                {
-                    __result = group.MainThingDef;
-                }
+            }
+            if (group != null && group.MainThingDef != thingDef)
+            {
+                thingDef = group.MainThingDef;
             }
         }
     }
@@ -278,7 +283,23 @@ namespace ResourceDictionary
             GenDefDatabase_GetDef.TryModifyResult(ref __result);
         }
     }
-    
+
+    [HarmonyPatch(typeof(ThingMaker), "MakeThing")]
+    public static class ThingMaker_MakeThing
+    {
+        public static void Prefix(ref ThingDef def, ref ThingDef stuff)
+        {
+            if (def != null)
+            {
+                GenDefDatabase_GetDef.TryModifyResult(ref def);
+            }
+            if (stuff != null)
+            {
+                GenDefDatabase_GetDef.TryModifyResult(ref stuff);
+            }
+        }
+    }
+
     [HarmonyPatch(typeof(BackCompatibility), "BackCompatibleDefName")]
     public static class BackCompatibility_BackCompatibleDefName
     {
