@@ -46,7 +46,7 @@ namespace ResourceDictionary
                 .Where(x => x.FirstDef != null).ToList();
 
             var resetRect = new Rect(searchLabel.x, searchLabel.yMax + 5, 265, 24f);
-            if (Widgets.ButtonText(resetRect, "Reset".Translate()))
+            if (Widgets.ButtonText(resetRect, "RD.ResetModSettingsToDefault".Translate()))
             {
                 thingSettings = new Dictionary<string, ThingGroup>();
                 Core.processedDefs.Clear();
@@ -66,7 +66,7 @@ namespace ResourceDictionary
                 var curNum = outerPos.y;
                 var sectionRect = new Rect(outerPos.x - 5, outerPos.y, viewArea.width, 5 + 35f + 24 + (thingGroup.thingDefs.ToList().Count * 28));
                 Widgets.DrawMenuSection(sectionRect);
-                var labelRect = new Rect(outerPos.x + 5, outerPos.y + 5, 200, 35f);
+                var labelRect = new Rect(outerPos.x + 5, outerPos.y + 5, viewArea.width - 20, 35f);
                 if (canDrawGroup)
                 {
                     Widgets.Label(labelRect, Core.GetThingKeyBase(thingGroup.FirstDef).CapitalizeFirst());
@@ -92,7 +92,7 @@ namespace ResourceDictionary
                         iconRect.x += 24;
                         Widgets.ThingIcon(iconRect, def);
                         var name = defName + " - " + def.LabelCap + " [" + (def.modContentPack?.Name ?? "RD.UnknownMod".Translate()) + "]";
-                        var labelRect2 = new Rect(iconRect.xMax + 15, innerPos.y, Text.CalcSize(name).x + 10, 24f);
+                        var labelRect2 = new Rect(iconRect.xMax + 15, innerPos.y, viewArea.width - 350, 24f);
                         Widgets.Label(labelRect2, name);
                         var removeRect = new Rect(viewArea.width - 220, labelRect2.y, 200, 24);
                         if (Widgets.ButtonText(removeRect, "RD.RemoveFromThisGroup".Translate()))

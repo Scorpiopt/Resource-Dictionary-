@@ -8,4 +8,5 @@
 	<RD.ActivateDeduplication>Activate deduplication</RD.ActivateDeduplication>
 	<RD.RemoveFromThisGroup>Remove from this group</RD.RemoveFromThisGroup>
 	<RD.ExplanationTitle>Search for the thing/resource you want to make primary. After selecting and activating it will be primary in that group and other items will be replaced by it. Game restart is required in order to take effect.</RD.ExplanationTitle>
+	<RD.ResetModSettingsToDefault>Reset mod settings to default</RD.ResetModSettingsToDefault>
 </LanguageData>
