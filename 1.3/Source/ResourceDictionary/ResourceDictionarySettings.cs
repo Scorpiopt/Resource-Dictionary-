@@ -44,6 +44,26 @@ namespace ResourceDictionary
             Widgets.Label(explanationTitleRect, "RD.ExplanationTitle".Translate());
             var thingGroups = (searchKey.NullOrEmpty() ? curThingGroups : curThingGroups.Where(x => x.thingKey.ToLower().Contains(searchKey.ToLower())))
                 .Where(x => x.FirstDef != null).ToList();
+            foreach (var thingGroup in thingGroups)
+            {
+                foreach (var defName in thingGroup.thingDefs.ListFullCopy())
+                {
+                    var def = DefDatabase<ThingDef>.GetNamedSilentFail(defName);
+                    if (def is null)
+                    {
+                        thingGroup.thingDefs.Remove(defName);
+                    }
+                }
+                foreach (var defName in thingGroup.removedDefs.ListFullCopy())
+                {
+                    var def = DefDatabase<ThingDef>.GetNamedSilentFail(defName);
+                    if (def is null)
+                    {
+                        thingGroup.removedDefs.Remove(defName);
+                    }
+                }
+            }
+            thingGroups.RemoveAll(x => x.thingDefs.Count() == 0 && x.removedDefs.Count() == 0);
 
             var resetRect = new Rect(searchLabel.x, searchLabel.yMax + 5, 265, 24f);
             if (Widgets.ButtonText(resetRect, "RD.ResetModSettingsToDefault".Translate()))
@@ -90,7 +110,14 @@ namespace ResourceDictionary
                         var iconRect = new Rect(innerPos.x + 30, innerPos.y, 24, 24);
                         Widgets.InfoCardButton(iconRect, def);
                         iconRect.x += 24;
-                        Widgets.ThingIcon(iconRect, def);
+                        try
+                        {
+                            Widgets.ThingIcon(iconRect, def);
+                        }
+                        catch
+                        {
+
+                        }
                         var name = defName + " - " + def.LabelCap + " [" + (def.modContentPack?.Name ?? "RD.UnknownMod".Translate()) + "]";
                         var labelRect2 = new Rect(iconRect.xMax + 15, innerPos.y, viewArea.width - 350, 24f);
                         Widgets.Label(labelRect2, name);
