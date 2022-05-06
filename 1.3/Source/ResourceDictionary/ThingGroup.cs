@@ -44,7 +44,7 @@ namespace ResourceDictionary
             {
                 foreach (var defName in thingDefs)
                 {
-                    var def = DefDatabase<ThingDef>.GetNamed(defName);
+                    var def = DefDatabase<ThingDef>.GetNamedSilentFail(defName);
                     if (def != null)
                     {
                         return def;

@@ -25,19 +25,19 @@ namespace ResourceDictionary
             Core.ProcessRecipes();
         }
     }
-    
+
     [StaticConstructorOnStartup]
     public static class Core
     {
         static Core()
         {
             TryFormThingGroups();
+
         }
 
         public static HashSet<ThingDef> processedDefs = new HashSet<ThingDef>();
         public static void TryFormThingGroups()
         {
-            Log.Message("Forming thing groups");
             var defsToProcess = DefDatabase<ThingDef>.AllDefs.Where(x => !processedDefs.Contains(x) && x.IsSpawnable()).ToList();
             if (defsToProcess.Any())
             {
@@ -52,8 +52,6 @@ namespace ResourceDictionary
                 }
                 ProcessGroups();
             }
-            
-
         }
         public static void ProcessGroups()
         {
@@ -73,10 +71,9 @@ namespace ResourceDictionary
                     {
                         group.mainThingDefName = group.thingDefs.First();
                     }
-
-                    //if (group.thingDefs.Count > 1)
+                    //if (group.thingDefs.Count > 1 && group.deduplicationEnabled)
                     //{
-                    //    Log.Message("Main thing def: " + group.mainThingDef + ", will replace following things: " + String.Join(", ", group.thingDefs.Where(x => x != group.mainThingDef)));
+                    //    Log.Message("Main thing def: " + group.mainThingDefName + ", will replace following things: " + String.Join(", ", group.thingDefs.Where(x => x != group.mainThingDefName)));
                     //}
                 }
             }
@@ -143,7 +140,6 @@ namespace ResourceDictionary
                 }
             }
         }
-
         public static bool IsSpawnable(this ThingDef def)
         {
             if (def.forceDebugSpawnable)
@@ -151,12 +147,12 @@ namespace ResourceDictionary
                 return true;
             }
             if (def.DerivedFrom(typeof(Corpse)) || def.IsBlueprint || def.IsFrame || def.DerivedFrom(typeof(ActiveDropPod))
-                || def.DerivedFrom(typeof(MinifiedThing)) || def.DerivedFrom(typeof(MinifiedTree)) || def.DerivedFrom(typeof(UnfinishedThing)) 
+                || def.DerivedFrom(typeof(MinifiedThing)) || def.DerivedFrom(typeof(MinifiedTree)) || def.DerivedFrom(typeof(UnfinishedThing))
                 || def.DerivedFrom(typeof(SignalAction)) || def.destroyOnDrop)
             {
                 return false;
             }
-            if (def.category == ThingCategory.Item || def.category == ThingCategory.Plant || def.category == ThingCategory.Pawn 
+            if (def.category == ThingCategory.Item || def.category == ThingCategory.Plant || def.category == ThingCategory.Pawn
                 || def.category == ThingCategory.Building)
             {
                 return true;
@@ -179,66 +175,16 @@ namespace ResourceDictionary
         }
         public static ThingGroup GetGroup(this ThingDef thingDef)
         {
-            if (ResourceDictionaryMod.settings.thingSettings.TryGetValue(thingDef.GetThingKey(), out var resourceGroup) 
-                && resourceGroup.deduplicationEnabled)
+            if (thingDef != null)
             {
-                return resourceGroup;
+                var group = ResourceDictionaryMod.settings.thingSettings.Values.Where(x => x.thingDefs.Contains(thingDef.defName)).FirstOrDefault();
+                if (group != null && group.deduplicationEnabled)
+                {
+                    return group;
+                }
             }
             return null;
         }
-    }
-    
-    [HarmonyPatch(typeof(DirectXmlCrossRefLoader), "ResolveAllWantedCrossReferences")]
-    public static class DirectXmlCrossRefLoader_ResolveAllWantedCrossReferences
-    {
-        public static void Prefix()
-        {
-            Core.TryFormThingGroups();
-        }
-    }
-    
-    [HarmonyPatch(typeof(ThingDef), "Named")]
-    public static class ThingDef_Named
-    {
-        public static void Postfix(ref ThingDef __result)
-        {
-            if (__result != null)
-            {
-                var group = __result.GetGroup();
-                if (group is null)
-                {
-                    if (__result.IsSpawnable() && !Core.processedDefs.Contains(__result))
-                    {
-                        //Log.Message("Missing group for " + __result);
-                        try
-                        {
-                            Core.processedDefs.Add(__result);
-                            Core.ProcessDef(__result);
-                            Core.ProcessGroups();
-                            group = __result.GetGroup();
-                        }
-                        catch
-                        {
-                            //Log.Message("Failed to process " + __result);
-                        }
-                    }
-                }
-                if (group != null && group.MainThingDef != __result)
-                {
-                    __result = group.MainThingDef;
-                }
-            }
-        }
-    }
-    
-    [HarmonyPatch(typeof(GenDefDatabase), "GetDef")]
-    public static class GenDefDatabase_GetDef
-    {  
-        public static void Postfix(ref Def __result)
-        {
-            TryModifyResult(ref __result);
-        }
-    
         public static void TryModifyResult(ref Def __result)
         {
             if (__result is ThingDef thingDef)
@@ -246,20 +192,18 @@ namespace ResourceDictionary
                 TryModifyResult(ref thingDef);
             }
         }
-
         public static void TryModifyResult(ref ThingDef thingDef)
         {
             var group = thingDef.GetGroup();
             if (group is null)
             {
-                if (thingDef.IsSpawnable() && !Core.processedDefs.Contains(thingDef))
+                if (thingDef.IsSpawnable() && !processedDefs.Contains(thingDef))
                 {
-                    //Log.Message("Missing group for " + thingDef);
                     try
                     {
-                        Core.processedDefs.Add(thingDef);
-                        Core.ProcessDef(thingDef);
-                        Core.ProcessGroups();
+                        processedDefs.Add(thingDef);
+                        ProcessDef(thingDef);
+                        ProcessGroups();
                         group = thingDef.GetGroup();
                     }
                     catch
@@ -268,19 +212,74 @@ namespace ResourceDictionary
                     }
                 }
             }
+
             if (group != null && group.MainThingDef != thingDef)
             {
                 thingDef = group.MainThingDef;
             }
         }
+
+        public static void TryModifyResult(string defName, ref string result)
+        {
+            var group = ResourceDictionaryMod.settings.thingSettings.Values.Where(x => x.thingDefs.Contains(defName)).FirstOrDefault();
+            if (group != null)
+            {
+                if (group.deduplicationEnabled)
+                {
+                    if (group.mainThingDefName != result)
+                    {
+                        result = group.mainThingDefName;
+                    }
+                }
+            }
+        }
     }
-    
+
+    [HarmonyPatch(typeof(DirectXmlCrossRefLoader), "ResolveAllWantedCrossReferences")]
+    public static class DirectXmlCrossRefLoader_ResolveAllWantedCrossReferences
+    {
+        public static void Prefix()
+        {
+            Core.TryFormThingGroups();
+        }
+    }
+
+    [HarmonyPatch(typeof(ThingDef), "Named")]
+    public static class ThingDef_Named
+    {
+        public static void Postfix(ref ThingDef __result)
+        {
+            if (__result != null)
+            {
+                Core.TryModifyResult(ref __result);
+            }
+        }
+    }
+
+    [HarmonyPatch(typeof(GenDefDatabase), "GetDef")]
+    public static class GenDefDatabase_GetDef
+    {
+        public static void Postfix(ref Def __result)
+        {
+            Core.TryModifyResult(ref __result);
+        }
+    }
+
     [HarmonyPatch(typeof(GenDefDatabase), "GetDefSilentFail")]
     public static class GenDefDatabase_GetDefSilentFail
     {
         public static void Postfix(ref Def __result)
         {
-            GenDefDatabase_GetDef.TryModifyResult(ref __result);
+            Core.TryModifyResult(ref __result);
+        }
+    }
+
+    [HarmonyPatch(typeof(ThingDefCountClass), MethodType.Constructor, new Type[] { typeof(ThingDef), typeof(int) })]
+    public static class ThingDefCountClass_GetDefSilentFail
+    {
+        public static void Prefix(ref ThingDef thingDef)
+        {
+            Core.TryModifyResult(ref thingDef);
         }
     }
 
@@ -291,11 +290,11 @@ namespace ResourceDictionary
         {
             if (def != null)
             {
-                GenDefDatabase_GetDef.TryModifyResult(ref def);
+                Core.TryModifyResult(ref def);
             }
             if (stuff != null)
             {
-                GenDefDatabase_GetDef.TryModifyResult(ref stuff);
+                Core.TryModifyResult(ref stuff);
             }
         }
     }
@@ -307,33 +306,35 @@ namespace ResourceDictionary
         {
             if (typeof(ThingDef).IsAssignableFrom(defType))
             {
-                var thingDef = GenDefDatabase.GetDefSilentFail(defType, __result) as ThingDef;
-                if (thingDef != null)
-                {
-                    var group = thingDef.GetGroup();
-                    if (group is null)
-                    {
-                        if (thingDef.IsSpawnable() && !Core.processedDefs.Contains(thingDef))
-                        {
-                            //Log.Message("Missing group for " + thingDef);
-                            try
-                            {
-                                Core.processedDefs.Add(thingDef);
-                                Core.ProcessDef(thingDef);
-                                Core.ProcessGroups();
-                                group = thingDef.GetGroup();
-                            }
-                            catch
-                            {
-                                //Log.Message("Failed to process " + thingDef);
-                            }
-                        }
-                    }
-                    if (group != null && group.mainThingDefName != __result)
-                    {
-                        __result = group.mainThingDefName;
-                    }
-                }
+                Core.TryModifyResult(defName, ref __result);
+            }
+        }
+    }
+
+    [HarmonyPatch(typeof(DirectXmlCrossRefLoader), "RegisterObjectWantsCrossRef",
+        new Type[] { typeof(object), typeof(FieldInfo), typeof(string), typeof(string), typeof(Type) })]
+    public class DirectXmlCrossRefLoader_RegisterObjectWantsCrossRef_PatchOne
+    {
+        public static void Prefix(object wanter, FieldInfo fi, ref string targetDefName, string mayRequireMod = null, Type assumeFieldType = null)
+        {
+            var type = fi.FieldType;
+            if (typeof(ThingDef).IsAssignableFrom(type))
+            {
+                Core.TryModifyResult(targetDefName, ref targetDefName);
+            }
+        }
+    }
+
+    [HarmonyPatch(typeof(DirectXmlCrossRefLoader), "RegisterObjectWantsCrossRef",
+        new Type[] { typeof(object), typeof(string), typeof(string), typeof(string), typeof(Type) })]
+    public class DirectXmlCrossRefLoader_RegisterObjectWantsCrossRef_PatchTwo
+    {
+        public static void Prefix(object wanter, string fieldName, ref string targetDefName, string mayRequireMod = null, Type overrideFieldType = null)
+        {
+            var type = wanter.GetType().GetField(fieldName, AccessTools.all).FieldType;
+            if (typeof(ThingDef).IsAssignableFrom(type))
+            {
+                Core.TryModifyResult(targetDefName, ref targetDefName);
             }
         }
     }
