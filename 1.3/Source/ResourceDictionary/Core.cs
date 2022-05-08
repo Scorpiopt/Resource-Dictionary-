@@ -35,6 +35,8 @@ namespace ResourceDictionary
 
         }
 
+        public static Dictionary<ThingDef, ThingGroup> cachedGroups = new Dictionary<ThingDef, ThingGroup>();
+
         public static HashSet<ThingDef> processedDefs = new HashSet<ThingDef>();
         public static void TryFormThingGroups()
         {
@@ -77,6 +79,7 @@ namespace ResourceDictionary
                     //}
                 }
             }
+            cachedGroups = new Dictionary<ThingDef, ThingGroup>();
             ResourceDictionaryMod.settings.curThingGroups = ResourceDictionaryMod.settings.thingSettings.Values
                 .OrderByDescending(x => x.thingDefs.Count).ThenBy(x => x.thingKey).ToList();
         }
@@ -140,7 +143,18 @@ namespace ResourceDictionary
                 }
             }
         }
+
+        public static Dictionary<ThingDef, bool> cachedSpawnableResults = new Dictionary<ThingDef, bool>();
         public static bool IsSpawnable(this ThingDef def)
+        {
+            if (!cachedSpawnableResults.TryGetValue(def, out bool result))
+            {
+                cachedSpawnableResults[def] = result = IsSpawnableInt(def);
+            }
+            return result;
+        }
+
+        public static bool IsSpawnableInt(this ThingDef def)
         {
             if (def.forceDebugSpawnable)
             {
@@ -159,7 +173,6 @@ namespace ResourceDictionary
             }
             return false;
         }
-
         public static bool DerivedFrom(this ThingDef thingDef, Type type)
         {
             return type.IsAssignableFrom(thingDef.thingClass);
@@ -177,10 +190,26 @@ namespace ResourceDictionary
         {
             if (thingDef != null)
             {
-                var group = ResourceDictionaryMod.settings.thingSettings.Values.Where(x => x.thingDefs.Contains(thingDef.defName)).FirstOrDefault();
-                if (group != null && group.deduplicationEnabled)
+                if (UnityData.IsInMainThread)
                 {
-                    return group;
+                    if (!cachedGroups.TryGetValue(thingDef, out ThingGroup group))
+                    {
+                        cachedGroups[thingDef] = group = ResourceDictionaryMod.settings.thingSettings.Values
+                            .Where(x => x.thingDefs.Count > 1 && x.thingDefs.Contains(thingDef.defName)).FirstOrDefault();
+                    }
+                    if (group != null && group.deduplicationEnabled)
+                    {
+                        return group;
+                    }
+                }
+                else
+                {
+                    var group = ResourceDictionaryMod.settings.thingSettings.Values
+                        .Where(x => x.thingDefs.Count > 1 && x.thingDefs.Contains(thingDef.defName)).FirstOrDefault();
+                    if (group != null && group.deduplicationEnabled)
+                    {
+                        return group;
+                    }
                 }
             }
             return null;
@@ -197,7 +226,7 @@ namespace ResourceDictionary
             var group = thingDef.GetGroup();
             if (group is null)
             {
-                if (thingDef.IsSpawnable() && !processedDefs.Contains(thingDef))
+                if (!processedDefs.Contains(thingDef) && thingDef.IsSpawnable())
                 {
                     try
                     {

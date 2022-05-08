@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
+using System.Security.Cryptography;
 using HarmonyLib;
 using RimWorld;
 using UnityEngine;
@@ -56,8 +57,12 @@ namespace ResourceDictionary
 				float num = 0f;
 				foreach (ThingDef thingDef in thingDefs)
 				{
-					Rect rect = new Rect(0f, num, viewRect.width * 0.7f, 32f);
-					Widgets.Label(rect, thingDef.defName + " - " + thingDef.label);
+					Rect iconRect = new Rect(0f, num, 24, 32);
+					Widgets.InfoCardButton(iconRect, thingDef);
+					iconRect.x += 24;
+					Widgets.ThingIcon(iconRect, thingDef);
+					Rect rect = new Rect(iconRect.xMax + 5, num, viewRect.width * 0.6f, 32f);
+					Widgets.Label(new Rect(rect.x, rect.y + 5, rect.width, rect.height - 5), thingDef.LabelCap);
 					rect.x = rect.xMax;
 					rect.width = viewRect.width * 0.3f;
 					if (Widgets.ButtonText(rect, "RD.Add".Translate()))
