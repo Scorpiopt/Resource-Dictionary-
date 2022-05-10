@@ -46,29 +46,39 @@ namespace ResourceDictionary
 			outRect.yMax -= 70f;
 			outRect.width -= 16f;
 
-			var thingDefs = (searchKey.NullOrEmpty() ? Utils.processedDefs
+			var defs = (searchKey.NullOrEmpty() ? Utils.processedDefs
 				: Utils.processedDefs.Where(x => x.label.ToLower().Contains(searchKey.ToLower())))
-				.Where(x => !thingGroup.thingDefs.Contains(x.defName)).ToList();
-
-			Rect viewRect = new Rect(0f, 0f, outRect.width - 16f, (float)thingDefs.Count() * 35f);
+				.Where(x => !thingGroup.defs.Contains(x.defName)).ToList();
+			if (thingGroup.MainDef is TerrainDef)
+            {
+				defs = defs.Where(x => x is TerrainDef).ToList();
+			}
+			else
+            {
+				defs = defs.Where(x => x is ThingDef).ToList();
+			}
+			Rect viewRect = new Rect(0f, 0f, outRect.width - 16f, (float)defs.Count() * 35f);
 			Widgets.BeginScrollView(outRect, ref scrollPosition, viewRect);
 			try
 			{
 				float num = 0f;
-				foreach (ThingDef thingDef in thingDefs)
+				foreach (BuildableDef def in defs)
 				{
 					Rect iconRect = new Rect(0f, num, 24, 32);
-					Widgets.InfoCardButton(iconRect, thingDef);
-					iconRect.x += 24;
-					Widgets.ThingIcon(iconRect, thingDef);
+					Widgets.InfoCardButton(iconRect, def);
+					if (def is ThingDef thingDef)
+                    {
+						iconRect.x += 24;
+						Widgets.ThingIcon(iconRect, thingDef);
+					}
 					Rect rect = new Rect(iconRect.xMax + 5, num, viewRect.width * 0.6f, 32f);
-					Widgets.Label(new Rect(rect.x, rect.y + 5, rect.width, rect.height - 5), thingDef.LabelCap);
+					Widgets.Label(new Rect(rect.x, rect.y + 5, rect.width, rect.height - 5), def.LabelCap);
 					rect.x = rect.xMax;
 					rect.width = viewRect.width * 0.3f;
 					if (Widgets.ButtonText(rect, "RD.Add".Translate()))
 					{
-						thingGroup.thingDefs.Add(thingDef.defName);
-                        thingGroup.removedDefs.Remove(thingDef.defName);
+						thingGroup.defs.Add(def.defName);
+                        thingGroup.removedDefs.Remove(def.defName);
                         SoundDefOf.Click.PlayOneShotOnCamera();
 						this.Close();
 					}

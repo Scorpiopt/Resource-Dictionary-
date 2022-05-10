@@ -14,23 +14,22 @@ using System.Xml;
 using UnityEngine;
 using Verse;
 using Verse.AI;
-using static Verse.DirectXmlCrossRefLoader;
 
 namespace ResourceDictionary
 {
     public static class Utils
     {
-        public static HashSet<ThingDef> processedDefs = new HashSet<ThingDef>();
-        public static void TryFormThingGroups()
+        public static HashSet<BuildableDef> processedDefs = new HashSet<BuildableDef>();
+        public static void TryFormGroups()
         {
-            var defsToProcess = DefDatabase<ThingDef>.AllDefs.Where(x => !processedDefs.Contains(x) && x.IsSpawnable()).ToList();
+            var defsToProcess = DefDatabase<BuildableDef>.AllDefs.Where(x => !processedDefs.Contains(x) && x.IsSpawnable()).ToList();
             if (defsToProcess.Any())
             {
-                if (ResourceDictionaryMod.settings.thingSettings is null)
+                if (ResourceDictionaryMod.settings.groups is null)
                 {
-                    ResourceDictionaryMod.settings.thingSettings = new Dictionary<string, ThingGroup>();
+                    ResourceDictionaryMod.settings.groups = new Dictionary<string, ThingGroup>();
                 }
-
+            
                 foreach (var def in defsToProcess)
                 {
                     ProcessDef(def);
@@ -40,21 +39,21 @@ namespace ResourceDictionary
         }
         public static void ProcessGroups()
         {
-            foreach (var group in ResourceDictionaryMod.settings.thingSettings.Values)
+            foreach (var group in ResourceDictionaryMod.settings.groups.Values)
             {
-                if (group.thingDefs.Any())
+                if (group.defs.Any())
                 {
-                    if (!group.mainThingDefName.NullOrEmpty())
+                    if (!group.mainDefName.NullOrEmpty())
                     {
-                        var def = DefDatabase<ThingDef>.GetNamedSilentFail(group.mainThingDefName);
+                        var def = DefDatabase<BuildableDef>.GetNamedSilentFail(group.mainDefName);
                         if (def != null)
                         {
-                            group.mainThingDefName = def.defName;
+                            group.mainDefName = def.defName;
                         }
                     }
                     else
                     {
-                        group.mainThingDefName = group.thingDefs.First();
+                        group.mainDefName = group.defs.First();
                     }
                     //if (group.thingDefs.Count > 1 && group.deduplicationEnabled)
                     //{
@@ -62,31 +61,31 @@ namespace ResourceDictionary
                     //}
                 }
             }
-            ResourceDictionaryMod.settings.curThingGroups = ResourceDictionaryMod.settings.thingSettings.Values
+            ResourceDictionaryMod.settings.curThingGroups = ResourceDictionaryMod.settings.groups.Values
                 .OrderByDescending(x => x.deduplicationEnabled)
-                .ThenByDescending(x => x.thingDefs.Count)
-                .ThenBy(x => x.thingKey).ToList();
+                .ThenByDescending(x => x.defs.Count)
+                .ThenBy(x => x.groupKey).ToList();
         }
-        public static void ProcessDef(ThingDef thingDef)
+        public static void ProcessDef(BuildableDef def)
         {
-            var thingKey = GetThingKey(thingDef);
+            var thingKey = GetDefKey(def);
             if (!thingKey.NullOrEmpty())
             {
-                if (!ResourceDictionaryMod.settings.thingSettings.TryGetValue(thingKey, out var group))
+                if (!ResourceDictionaryMod.settings.groups.TryGetValue(thingKey, out var group))
                 {
-                    ResourceDictionaryMod.settings.thingSettings[thingKey] = group = new ThingGroup
+                    ResourceDictionaryMod.settings.groups[thingKey] = group = new ThingGroup
                     {
-                        thingKey = thingKey,
-                        thingDefs = new List<string>(),
+                        groupKey = thingKey,
+                        defs = new List<string>(),
                         removedDefs = new List<string>(),
                     };
                 }
-                if (!group.removedDefs.Contains(thingDef.defName) && !group.thingDefs.Contains(thingDef.defName))
+                if (!group.removedDefs.Contains(def.defName) && !group.defs.Contains(def.defName))
                 {
-                    group.thingDefs.Add(thingDef.defName);
+                    group.defs.Add(def.defName);
                 }
             }
-            processedDefs.Add(thingDef);
+            processedDefs.Add(def);
         }
 
         public static void ProcessRecipes()
@@ -128,8 +127,8 @@ namespace ResourceDictionary
             }
         }
 
-        public static Dictionary<ThingDef, bool> cachedSpawnableResults = new Dictionary<ThingDef, bool>();
-        public static bool IsSpawnable(this ThingDef def)
+        public static Dictionary<BuildableDef, bool> cachedSpawnableResults = new Dictionary<BuildableDef, bool>();
+        public static bool IsSpawnable(this BuildableDef def)
         {
             if (!cachedSpawnableResults.TryGetValue(def, out bool result))
             {
@@ -138,7 +137,20 @@ namespace ResourceDictionary
             return result;
         }
 
-        public static bool IsSpawnableInt(this ThingDef def)
+        public static bool IsSpawnableInt(this BuildableDef def)
+        {
+            if (def is TerrainDef terrainDef)
+            {
+                return true;
+            }
+            else if (def is ThingDef thingDef)
+            {
+                return IsSpawnableInt(thingDef);
+            }
+            return false;
+        }
+
+        public static bool IsSpawnableInt(ThingDef def)
         {
             try
             {
@@ -168,77 +180,93 @@ namespace ResourceDictionary
         {
             return type.IsAssignableFrom(thingDef.thingClass);
         }
-        public static string GetThingKey(this ThingDef thingDef)
+        public static string GetDefKey(this BuildableDef buildableDef)
         {
-            if (!thingDef.label.NullOrEmpty())
+            if (buildableDef is ThingDef thingDef)
             {
-                var result = GetThingKeyBase(thingDef) + "_" + thingDef.category.ToString().ToLower();
+                return GetThingDefKey(thingDef);
+            }
+            else if (buildableDef is TerrainDef terrainDef)
+            {
+                return GetTerrainDefKey(terrainDef);
+            }
+            return null;
+        }
+        public static string GetThingDefKey(this ThingDef def)
+        {
+            if (!def.label.NullOrEmpty())
+            {
+                var result = GetDefKeyBase(def) + "_" + def.category.ToString().ToLower();
                 return result;
             }
             return null;
         }
-        public static string GetThingKeyBase(ThingDef thingDef)
+
+        public static string GetTerrainDefKey(this TerrainDef terrainDef)
         {
-            return thingDef.label?.ToLower();
-        }
-        public static ThingGroup GetGroup(this ThingDef thingDef)
-        {
-            if (thingDef != null)
+            if (!terrainDef.label.NullOrEmpty())
             {
-                return ResourceDictionaryMod.settings.thingSettings.Values
-                        .Where(x => x.deduplicationEnabled && x.thingDefs.Count > 1 && x.thingDefs.Contains(thingDef.defName)).FirstOrDefault();
+                var result = GetDefKeyBase(terrainDef) + "_terrain";
+                return result;
+            }
+            return null;
+        }
+        public static string GetDefKeyBase(BuildableDef def)
+        {
+            return def.label?.ToLower();
+        }
+        public static ThingGroup GetGroup(this BuildableDef def)
+        {
+            if (def != null)
+            {
+                return ResourceDictionaryMod.settings.groups.Values
+                        .Where(x => x.deduplicationEnabled && x.defs.Count > 1 && x.defs.Contains(def.defName)).FirstOrDefault();
             }
             return null;
         }
         public static void TryModifyResult(ref Def __result)
         {
-            if (__result is ThingDef thingDef)
+            if (__result is BuildableDef def)
             {
-                TryModifyResult(ref thingDef);
+                TryModifyResult(ref def);
             }
         }
 
-        public static int replaceCount;
-        public static void TryModifyResult(ref ThingDef thingDef)
+        public static void TryModifyResult(ref BuildableDef def)
         {
-            var group = thingDef.GetGroup();
+            var group = def.GetGroup();
             if (group is null)
             {
-                if (!processedDefs.Contains(thingDef) && thingDef.IsSpawnable())
+                if (!processedDefs.Contains(def) && def.IsSpawnable())
                 {
                     try
                     {
-                        processedDefs.Add(thingDef);
-                        ProcessDef(thingDef);
+                        processedDefs.Add(def);
+                        ProcessDef(def);
                         ProcessGroups();
-                        group = thingDef.GetGroup();
+                        group = def.GetGroup();
                     }
                     catch
                     {
-                        //Log.Message("Failed to process " + thingDef);
+                        Log.Error("Failed to process " + def);
                     }
                 }
             }
 
-            if (group != null && group.MainThingDef != thingDef)
+            if (group != null && group.MainDef != def)
             {
-                replaceCount++;
-                Log.Message(replaceCount + " - Replacing " + thingDef + " with " + group.MainThingDef);
-                thingDef = group.MainThingDef;
+                def = group.MainDef;
             }
         }
 
         public static void TryModifyResult(string defName, ref string result)
         {
-            var group = ResourceDictionaryMod.settings.thingSettings.Values.Where(x => x.deduplicationEnabled 
-                && x.thingDefs.Contains(defName) && x.mainThingDefName != defName).FirstOrDefault();
-            if (group != null && result != group.mainThingDefName)
+            var group = ResourceDictionaryMod.settings.groups.Values.Where(x => x.deduplicationEnabled 
+                && x.defs.Contains(defName) && x.mainDefName != defName).FirstOrDefault();
+            if (group != null && result != group.mainDefName)
             {
-                replaceCount++;
-                Log.Message(replaceCount + " - 2 Replacing " + result + " with " + group.mainThingDefName);
-                result = group.mainThingDefName;
+                result = group.mainDefName;
             }
         }
     }
-
 }

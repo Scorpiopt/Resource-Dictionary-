@@ -12,39 +12,39 @@ namespace ResourceDictionary
 {
     public class ThingGroup : IExposable
     {
-        public string thingKey;
-        public string mainThingDefName;
-        private ThingDef mainThingDef;
-        public ThingDef MainThingDef
+        public string groupKey;
+        public string mainDefName;
+        private BuildableDef mainDef;
+        public BuildableDef MainDef
         {
             get
             {
-                if (mainThingDef == null)
+                if (mainDef == null)
                 {
-                    mainThingDef = DefDatabase<ThingDef>.GetNamedSilentFail(mainThingDefName);
+                    mainDef = DefDatabase<BuildableDef>.GetNamedSilentFail(mainDefName);
                 }
-                if (mainThingDef is null)
+                if (mainDef is null)
                 {
-                    mainThingDef = FirstDef;
-                    if (mainThingDef != null)
+                    mainDef = FirstDef;
+                    if (mainDef != null)
                     {
-                        mainThingDefName = mainThingDef.defName;
+                        mainDefName = mainDef.defName;
                     }
                 }
-                return mainThingDef;
+                return mainDef;
             }
             
         }
-        public List<string> thingDefs;
+        public List<string> defs;
         public List<string> removedDefs;
         public bool deduplicationEnabled;
-        public ThingDef FirstDef
+        public BuildableDef FirstDef
         {
             get
             {
-                foreach (var defName in thingDefs)
+                foreach (var defName in defs)
                 {
-                    var def = DefDatabase<ThingDef>.GetNamedSilentFail(defName);
+                    var def = DefDatabase<BuildableDef>.GetNamedSilentFail(defName);
                     if (def != null)
                     {
                         return def;
@@ -55,16 +55,16 @@ namespace ResourceDictionary
         }
         public void ExposeData()
         {
-            Scribe_Values.Look(ref thingKey, "thingKey");
-            Scribe_Values.Look(ref mainThingDefName, "mainThingDefName");
+            Scribe_Values.Look(ref groupKey, "thingKey");
+            Scribe_Values.Look(ref mainDefName, "mainThingDefName");
             Scribe_Values.Look(ref deduplicationEnabled, "deduplicationEnabled");
-            Scribe_Collections.Look(ref thingDefs, "thingDefs");
+            Scribe_Collections.Look(ref defs, "thingDefs");
             Scribe_Collections.Look(ref removedDefs, "removedDefs");
             if (Scribe.mode == LoadSaveMode.PostLoadInit)
             {
-                if (thingDefs is null)
+                if (defs is null)
                 {
-                    thingDefs = new List<string>();
+                    defs = new List<string>();
                 }
                 if (removedDefs is null)
                 {

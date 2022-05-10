@@ -12,18 +12,18 @@ namespace ResourceDictionary
     {
         public ResourceDictionarySettings()
         {
-            thingSettings = new Dictionary<string, ThingGroup>();
+            groups = new Dictionary<string, ThingGroup>();
         }
-        public Dictionary<string, ThingGroup> thingSettings = new Dictionary<string, ThingGroup>();
+        public Dictionary<string, ThingGroup> groups = new Dictionary<string, ThingGroup>();
         public override void ExposeData()
         {
             base.ExposeData();
-            Scribe_Collections.Look(ref thingSettings, "resourceSettings", LookMode.Value, LookMode.Deep);
+            Scribe_Collections.Look(ref groups, "resourceSettings", LookMode.Value, LookMode.Deep);
             if (Scribe.mode == LoadSaveMode.PostLoadInit)
             {
-                if (thingSettings is null)
+                if (groups is null)
                 {
-                    thingSettings = new Dictionary<string, ThingGroup>();
+                    groups = new Dictionary<string, ThingGroup>();
                 }
             }
         }
@@ -42,36 +42,36 @@ namespace ResourceDictionary
             Text.Anchor = TextAnchor.UpperLeft;
             var explanationTitleRect = new Rect(searchRect.xMax + 15, searchRect.y, inRect.width - (searchLabel.width + searchRect.width + 35), 54f);
             Widgets.Label(explanationTitleRect, "RD.ExplanationTitle".Translate());
-            var thingGroups = (searchKey.NullOrEmpty() ? curThingGroups : curThingGroups.Where(x => x.thingKey.ToLower().Contains(searchKey.ToLower())))
+            var thingGroups = (searchKey.NullOrEmpty() ? curThingGroups : curThingGroups.Where(x => x.groupKey.ToLower().Contains(searchKey.ToLower())))
                 .Where(x => x.FirstDef != null).ToList();
             foreach (var thingGroup in thingGroups)
             {
-                foreach (var defName in thingGroup.thingDefs.ListFullCopy())
+                foreach (var defName in thingGroup.defs.ListFullCopy())
                 {
-                    var def = DefDatabase<ThingDef>.GetNamedSilentFail(defName);
+                    var def = DefDatabase<BuildableDef>.GetNamedSilentFail(defName);
                     if (def is null)
                     {
-                        thingGroup.thingDefs.Remove(defName);
+                        thingGroup.defs.Remove(defName);
                     }
                 }
                 foreach (var defName in thingGroup.removedDefs.ListFullCopy())
                 {
-                    var def = DefDatabase<ThingDef>.GetNamedSilentFail(defName);
+                    var def = DefDatabase<BuildableDef>.GetNamedSilentFail(defName);
                     if (def is null)
                     {
                         thingGroup.removedDefs.Remove(defName);
                     }
                 }
             }
-            thingGroups.RemoveAll(x => x.thingDefs.Count() == 0 && x.removedDefs.Count() == 0);
+            thingGroups.RemoveAll(x => x.defs.Count() == 0 && x.removedDefs.Count() == 0);
 
             var resetRect = new Rect(searchLabel.x, searchLabel.yMax + 5, 265, 24f);
             if (Widgets.ButtonText(resetRect, "RD.ResetModSettingsToDefault".Translate()))
             {
-                thingSettings = new Dictionary<string, ThingGroup>();
+                groups = new Dictionary<string, ThingGroup>();
                 Utils.processedDefs.Clear();
-                Utils.TryFormThingGroups();
-                curThingGroups = thingSettings.Values.OrderByDescending(x => x.thingDefs.Count).ThenBy(x => x.thingKey).ToList();
+                Utils.TryFormGroups();
+                curThingGroups = groups.Values.OrderByDescending(x => x.defs.Count).ThenBy(x => x.groupKey).ToList();
             }
             var height = GetScrollHeight(thingGroups);
             Rect outerRect = new Rect(rect.x, searchRect.yMax + 35, rect.width, rect.height - 70);
@@ -84,12 +84,12 @@ namespace ResourceDictionary
             {
                 bool canDrawGroup = num >= scrollPosition.y - entryHeight && num <= (scrollPosition.y + outerRect.height);
                 var curNum = outerPos.y;
-                var sectionRect = new Rect(outerPos.x - 5, outerPos.y, viewArea.width, 5 + 35f + 24 + (thingGroup.thingDefs.ToList().Count * 28));
+                var sectionRect = new Rect(outerPos.x - 5, outerPos.y, viewArea.width, 5 + 35f + 24 + (thingGroup.defs.ToList().Count * 28));
                 Widgets.DrawMenuSection(sectionRect);
                 var labelRect = new Rect(outerPos.x + 5, outerPos.y + 5, viewArea.width - 20, 35f);
                 if (canDrawGroup)
                 {
-                    Widgets.Label(labelRect, Utils.GetThingKeyBase(thingGroup.FirstDef).CapitalizeFirst());
+                    Widgets.Label(labelRect, Utils.GetDefKeyBase(thingGroup.FirstDef).CapitalizeFirst());
                     var pos = new Vector2(viewArea.width - 220, labelRect.y);
                     Widgets.Checkbox(pos, ref thingGroup.deduplicationEnabled);
                     var activateGroupRect = new Rect(pos.x + 24 + 10, pos.y, 200, 24);
@@ -98,26 +98,30 @@ namespace ResourceDictionary
                 outerPos.y += 35f;
                 var innerPos = new Vector2(outerPos.x + 10, outerPos.y);
                 var toRemove = "";
-                foreach (var defName in thingGroup.thingDefs.ToList())
+                foreach (var defName in thingGroup.defs.ToList())
                 {
                     if (canDrawGroup)
                     {
-                        var def = DefDatabase<ThingDef>.GetNamed(defName);
-                        if (Widgets.RadioButton(new Vector2(innerPos.x, innerPos.y), thingGroup.mainThingDefName == defName))
+                        var def = DefDatabase<BuildableDef>.GetNamed(defName);
+                        if (Widgets.RadioButton(new Vector2(innerPos.x, innerPos.y), thingGroup.mainDefName == defName))
                         {
-                            thingGroup.mainThingDefName = defName;
+                            thingGroup.mainDefName = defName;
                         }
                         var iconRect = new Rect(innerPos.x + 30, innerPos.y, 24, 24);
                         Widgets.InfoCardButton(iconRect, def);
-                        iconRect.x += 24;
-                        try
+                        if (def is ThingDef thingDef)
                         {
-                            Widgets.ThingIcon(iconRect, def);
-                        }
-                        catch
-                        {
+                            iconRect.x += 24;
+                            try
+                            {
+                                Widgets.ThingIcon(iconRect, thingDef);
+                            }
+                            catch
+                            {
 
+                            }
                         }
+
                         var name = defName + " - " + def.LabelCap + " [" + (def.modContentPack?.Name ?? "RD.UnknownMod".Translate()) + "]";
                         var labelRect2 = new Rect(iconRect.xMax + 15, innerPos.y, viewArea.width - 350, 24f);
                         Widgets.Label(labelRect2, name);
@@ -134,8 +138,12 @@ namespace ResourceDictionary
                 outerPos.y += 12f; // separates sections
                 if (!toRemove.NullOrEmpty())
                 {
-                    thingGroup.thingDefs.Remove(toRemove);
+                    thingGroup.defs.Remove(toRemove);
                     thingGroup.removedDefs.Add(toRemove);
+                    if (thingGroup.mainDefName == toRemove)
+                    {
+                        thingGroup.mainDefName = thingGroup.FirstDef?.defName;
+                    }
                 }
                 if (canDrawGroup)
                 {
@@ -159,7 +167,7 @@ namespace ResourceDictionary
             {
                 num += 35;
                 num += 24;
-                foreach (var thingDef in group.thingDefs)
+                foreach (var thingDef in group.defs)
                 {
                     num += 28f;
                 }

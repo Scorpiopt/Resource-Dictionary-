@@ -15,7 +15,7 @@ namespace ResourceDictionary
     {
         public static void Postfix()
         {
-            Utils.TryFormThingGroups();
+            Utils.TryFormGroups();
             Utils.ProcessRecipes();
         }
     }
@@ -25,7 +25,7 @@ namespace ResourceDictionary
     {
         public static void Prefix()
         {
-            Utils.TryFormThingGroups();
+            Utils.TryFormGroups();
             foreach (var wanted in wantedRefs)
             {
                 if (wanted is WantedRefForObject wantedRefForObject)
@@ -38,7 +38,7 @@ namespace ResourceDictionary
                     if (genericTypeDefinition == typeof(WantedRefForList<>))
                     {
                         var defType = wanted.GetType().GetGenericArguments()[0];
-                        if (typeof(ThingDef).IsAssignableFrom(defType))
+                        if (typeof(BuildableDef).IsAssignableFrom(defType))
                         {
                             var field = Traverse.Create(wanted).Field("defNames");
                             var defNames = field.GetValue() as List<string>;
@@ -56,8 +56,8 @@ namespace ResourceDictionary
                     {
                         var key = wanted.GetType().GetGenericArguments()[0];
                         var value = wanted.GetType().GetGenericArguments()[1];
-                        bool keyIsDef = typeof(ThingDef).IsAssignableFrom(key);
-                        bool valueIsDef = typeof(ThingDef).IsAssignableFrom(value);
+                        bool keyIsDef = typeof(BuildableDef).IsAssignableFrom(key);
+                        bool valueIsDef = typeof(BuildableDef).IsAssignableFrom(value);
                         if (keyIsDef || valueIsDef)
                         {
                             var field = Traverse.Create(wanted).Field("wantedDictRefs");
@@ -95,7 +95,23 @@ namespace ResourceDictionary
         {
             if (__result != null)
             {
-                Utils.TryModifyResult(ref __result);
+                var value = __result as Def;
+                Utils.TryModifyResult(ref value);
+                __result = value as ThingDef;
+            }
+        }
+    }
+    
+    [HarmonyPatch(typeof(TerrainDef), "Named")]
+    public static class TerrainDef_Named
+    {
+        public static void Postfix(ref TerrainDef __result)
+        {
+            if (__result != null)
+            {
+                var value = __result as Def;
+                Utils.TryModifyResult(ref value);
+                __result = value as TerrainDef;
             }
         }
     }
@@ -108,7 +124,7 @@ namespace ResourceDictionary
             Utils.TryModifyResult(ref __result);
         }
     }
-
+    
     [HarmonyPatch(typeof(GenDefDatabase), "GetDefSilentFail")]
     public static class GenDefDatabase_GetDefSilentFail
     {
@@ -117,13 +133,15 @@ namespace ResourceDictionary
             Utils.TryModifyResult(ref __result);
         }
     }
-
+    
     [HarmonyPatch(typeof(ThingDefCountClass), MethodType.Constructor, new Type[] { typeof(ThingDef), typeof(int) })]
     public static class ThingDefCountClass_GetDefSilentFail
     {
         public static void Prefix(ref ThingDef thingDef)
         {
-            Utils.TryModifyResult(ref thingDef);
+            var value = thingDef as Def;
+            Utils.TryModifyResult(ref value);
+            thingDef = value as ThingDef;
         }
     }
 
@@ -134,27 +152,31 @@ namespace ResourceDictionary
         {
             if (def != null)
             {
-                Utils.TryModifyResult(ref def);
+                var value = def as Def;
+                Utils.TryModifyResult(ref value);
+                def = value as ThingDef;
             }
             if (stuff != null)
             {
-                Utils.TryModifyResult(ref stuff);
+                var value = stuff as Def;
+                Utils.TryModifyResult(ref value);
+                stuff = value as ThingDef;
             }
         }
     }
-
+    
     [HarmonyPatch(typeof(BackCompatibility), "BackCompatibleDefName")]
     public static class BackCompatibility_BackCompatibleDefName
     {
         public static void Postfix(Type defType, string defName, ref string __result)
         {
-            if (typeof(ThingDef).IsAssignableFrom(defType))
+            if (typeof(BuildableDef).IsAssignableFrom(defType))
             {
                 Utils.TryModifyResult(defName, ref __result);
             }
         }
     }
-
+    
     [HarmonyPatch(typeof(DirectXmlCrossRefLoader), "RegisterObjectWantsCrossRef",
         new Type[] { typeof(object), typeof(FieldInfo), typeof(string), typeof(string), typeof(Type) })]
     public class DirectXmlCrossRefLoader_RegisterObjectWantsCrossRef_PatchOne
@@ -162,13 +184,13 @@ namespace ResourceDictionary
         public static void Prefix(object wanter, FieldInfo fi, ref string targetDefName, string mayRequireMod = null, Type assumeFieldType = null)
         {
             var type = fi.FieldType;
-            if (typeof(ThingDef).IsAssignableFrom(type))
+            if (typeof(BuildableDef).IsAssignableFrom(type))
             {
                 Utils.TryModifyResult(targetDefName, ref targetDefName);
             }
         }
     }
-
+    
     [HarmonyPatch(typeof(DirectXmlCrossRefLoader), "RegisterObjectWantsCrossRef",
         new Type[] { typeof(object), typeof(string), typeof(string), typeof(string), typeof(Type) })]
     public class DirectXmlCrossRefLoader_RegisterObjectWantsCrossRef_PatchTwo
@@ -176,13 +198,13 @@ namespace ResourceDictionary
         public static void Prefix(object wanter, string fieldName, ref string targetDefName, string mayRequireMod = null, Type overrideFieldType = null)
         {
             var type = wanter.GetType().GetField(fieldName, AccessTools.all).FieldType;
-            if (typeof(ThingDef).IsAssignableFrom(type))
+            if (typeof(BuildableDef).IsAssignableFrom(type))
             {
                 Utils.TryModifyResult(targetDefName, ref targetDefName);
             }
         }
     }
-
+    
     [HarmonyPatch(typeof(DirectXmlCrossRefLoader), "RegisterObjectWantsCrossRef",
     new Type[] { typeof(object), typeof(string), typeof(XmlNode), typeof(string), typeof(Type) })]
     public class DirectXmlCrossRefLoader_RegisterObjectWantsCrossRef_PatchThree
@@ -203,11 +225,11 @@ namespace ResourceDictionary
                 }
             }
         }
-
+    
         public static string ReturnName(string name, object wanter, string fieldName)
         {
             var type = wanter.GetType().GetField(fieldName, AccessTools.all).FieldType;
-            if (typeof(ThingDef).IsAssignableFrom(type))
+            if (typeof(BuildableDef).IsAssignableFrom(type))
             {
                 Utils.TryModifyResult(name, ref name);
             }
