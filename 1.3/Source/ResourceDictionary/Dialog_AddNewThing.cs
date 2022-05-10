@@ -46,8 +46,8 @@ namespace ResourceDictionary
 			outRect.yMax -= 70f;
 			outRect.width -= 16f;
 
-			var thingDefs = (searchKey.NullOrEmpty() ? Core.processedDefs
-				: Core.processedDefs.Where(x => x.label.ToLower().Contains(searchKey.ToLower())))
+			var thingDefs = (searchKey.NullOrEmpty() ? Utils.processedDefs
+				: Utils.processedDefs.Where(x => x.label.ToLower().Contains(searchKey.ToLower())))
 				.Where(x => !thingGroup.thingDefs.Contains(x.defName)).ToList();
 
 			Rect viewRect = new Rect(0f, 0f, outRect.width - 16f, (float)thingDefs.Count() * 35f);

@@ -69,8 +69,8 @@ namespace ResourceDictionary
             if (Widgets.ButtonText(resetRect, "RD.ResetModSettingsToDefault".Translate()))
             {
                 thingSettings = new Dictionary<string, ThingGroup>();
-                Core.processedDefs.Clear();
-                Core.TryFormThingGroups();
+                Utils.processedDefs.Clear();
+                Utils.TryFormThingGroups();
                 curThingGroups = thingSettings.Values.OrderByDescending(x => x.thingDefs.Count).ThenBy(x => x.thingKey).ToList();
             }
             var height = GetScrollHeight(thingGroups);
@@ -89,7 +89,7 @@ namespace ResourceDictionary
                 var labelRect = new Rect(outerPos.x + 5, outerPos.y + 5, viewArea.width - 20, 35f);
                 if (canDrawGroup)
                 {
-                    Widgets.Label(labelRect, Core.GetThingKeyBase(thingGroup.FirstDef).CapitalizeFirst());
+                    Widgets.Label(labelRect, Utils.GetThingKeyBase(thingGroup.FirstDef).CapitalizeFirst());
                     var pos = new Vector2(viewArea.width - 220, labelRect.y);
                     Widgets.Checkbox(pos, ref thingGroup.deduplicationEnabled);
                     var activateGroupRect = new Rect(pos.x + 24 + 10, pos.y, 200, 24);
