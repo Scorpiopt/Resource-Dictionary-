@@ -49,7 +49,7 @@ namespace ResourceDictionary
 			var defs = (searchKey.NullOrEmpty() ? Utils.processedDefs
 				: Utils.processedDefs.Where(x => x.label.ToLower().Contains(searchKey.ToLower())))
 				.Where(x => !thingGroup.defs.Contains(x.defName)).ToList();
-			if (thingGroup.MainDef is TerrainDef)
+			if (thingGroup.MainThingDef is TerrainDef)
             {
 				defs = defs.Where(x => x is TerrainDef).ToList();
 			}

@@ -14,27 +14,48 @@ namespace ResourceDictionary
     {
         public string groupKey;
         public string mainDefName;
-        private BuildableDef mainDef;
-        public BuildableDef MainDef
+        private ThingDef mainThingDef;
+        public ThingDef MainThingDef
         {
             get
             {
-                if (mainDef == null)
+                if (mainThingDef == null)
                 {
-                    mainDef = DefDatabase<BuildableDef>.GetNamedSilentFail(mainDefName);
+                    mainThingDef = DefDatabase<ThingDef>.GetNamedSilentFail(mainDefName);
                 }
-                if (mainDef is null)
+                if (mainThingDef is null)
                 {
-                    mainDef = FirstDef;
-                    if (mainDef != null)
+                    mainThingDef = FirstDef as ThingDef;
+                    if (mainThingDef != null)
                     {
-                        mainDefName = mainDef.defName;
+                        mainDefName = mainThingDef.defName;
                     }
                 }
-                return mainDef;
+                return mainThingDef;
             }
-            
         }
+
+        private TerrainDef mainTerrainDef;
+        public TerrainDef MainTerrainDef
+        {
+            get
+            {
+                if (mainTerrainDef == null)
+                {
+                    mainTerrainDef = DefDatabase<TerrainDef>.GetNamedSilentFail(mainDefName);
+                }
+                if (mainTerrainDef is null)
+                {
+                    mainTerrainDef = FirstDef as TerrainDef;
+                    if (mainTerrainDef != null)
+                    {
+                        mainDefName = mainTerrainDef.defName;
+                    }
+                }
+                return mainTerrainDef;
+            }
+        }
+
         public List<string> defs;
         public List<string> removedDefs;
         public bool deduplicationEnabled;
