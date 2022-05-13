@@ -188,7 +188,37 @@ namespace ResourceDictionary
             }
         }
     }
-    
+
+    [HarmonyPatch(typeof(BackCompatibility), "BackCompatibleThingDefWithShortHash_Force")]
+    public class BackCompatibility_BackCompatibleThingDefWithShortHash_Force_Patch
+    {
+        public static void Postfix(ref ThingDef __result, ushort hash, int major, int minor)
+        {
+            if (Utils.thingDefsByShortHash.TryGetValue(hash, out ThingDef thingDef))
+            {
+                if (thingDef.GetMainDef() != thingDef)
+                {
+                    __result = thingDef.GetMainDef();
+                }
+            }
+        }
+    }
+
+    [HarmonyPatch(typeof(BackCompatibility), "BackCompatibleTerrainWithShortHash")]
+    public class BackCompatibility_BackCompatibleTerrainWithShortHash_Patch
+    {
+        public static void Postfix(ref TerrainDef __result, ushort hash)
+        {
+            if (Utils.terrainDefsByShortHash.TryGetValue(hash, out TerrainDef terrainDef))
+            {
+                if (terrainDef.GetMainDef() != terrainDef)
+                {
+                    __result = terrainDef.GetMainDef();
+                }
+            }
+        }
+    }
+
     [HarmonyPatch(typeof(DirectXmlCrossRefLoader), "RegisterObjectWantsCrossRef",
         new Type[] { typeof(object), typeof(FieldInfo), typeof(string), typeof(string), typeof(Type) })]
     public class DirectXmlCrossRefLoader_RegisterObjectWantsCrossRef_PatchOne
