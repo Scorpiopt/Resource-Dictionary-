@@ -30,7 +30,17 @@ namespace ResourceDictionary
             {
                 if (wanted is WantedRefForObject wantedRefForObject)
                 {
-                    Utils.TryModifyResult(wantedRefForObject.defName, ref wantedRefForObject.defName);
+                    var defType = wantedRefForObject.overrideFieldType ?? wantedRefForObject.fi.FieldType;
+                    Log.Message("WantedRefForObject: " + defType + " - " + wantedRefForObject.defName);
+                    Log.ResetMessageCount();
+                    if (typeof(ThingDef).IsAssignableFrom(defType))
+                    {
+                        wantedRefForObject.defName = Utils.GetMainThingDefName(wantedRefForObject.defName);
+                    }
+                    else if (typeof(TerrainDef).IsAssignableFrom(defType))
+                    {
+                        wantedRefForObject.defName = Utils.GetMainTerrainDefName(wantedRefForObject.defName);
+                    }
                 }
                 else
                 {
@@ -38,7 +48,8 @@ namespace ResourceDictionary
                     if (genericTypeDefinition == typeof(WantedRefForList<>))
                     {
                         var defType = wanted.GetType().GetGenericArguments()[0];
-                        if (typeof(BuildableDef).IsAssignableFrom(defType))
+                        Log.Message("WantedRefForList: " + defType + " - " + wanted);
+                        if (typeof(ThingDef).IsAssignableFrom(defType))
                         {
                             var field = Traverse.Create(wanted).Field("defNames");
                             var defNames = field.GetValue() as List<string>;
@@ -46,8 +57,19 @@ namespace ResourceDictionary
                             for (var i = 0; i < defNames.Count; i++)
                             {
                                 var defName = defNames[i];
-                                Utils.TryModifyResult(defName, ref defName);
-                                newDefNames.Add(defName);
+                                newDefNames.Add(Utils.GetMainThingDefName(defName));
+                            }
+                            field.SetValue(newDefNames);
+                        }
+                        else if (typeof(TerrainDef).IsAssignableFrom(defType))
+                        {
+                            var field = Traverse.Create(wanted).Field("defNames");
+                            var defNames = field.GetValue() as List<string>;
+                            var newDefNames = new List<string>();
+                            for (var i = 0; i < defNames.Count; i++)
+                            {
+                                var defName = defNames[i];
+                                newDefNames.Add(Utils.GetMainTerrainDefName(defName));
                             }
                             field.SetValue(newDefNames);
                         }
@@ -68,17 +90,15 @@ namespace ResourceDictionary
                                 {
                                     XmlNode xmlNode = wantedDictRef["key"];
                                     var text = xmlNode.InnerText;
-                                    Log.Message("Replacing " + text);
-                                    Utils.TryModifyResult(text, ref text);
-                                    xmlNode.InnerText = text;
+                                    xmlNode.InnerText = typeof(ThingDef).IsAssignableFrom(key) ? Utils.GetMainThingDefName(text) 
+                                        : Utils.GetMainTerrainDefName(text);
                                 }
                                 if (valueIsDef)
                                 {
                                     XmlNode xmlNode2 = wantedDictRef["value"];
                                     var text = xmlNode2.InnerText;
-                                    Log.Message("Replacing " + text);
-                                    Utils.TryModifyResult(text, ref text);
-                                    xmlNode2.InnerText = text;
+                                    xmlNode2.InnerText = typeof(ThingDef).IsAssignableFrom(value) ? Utils.GetMainThingDefName(text)
+                                        : Utils.GetMainTerrainDefName(text);
                                 }
                             }
                         }
@@ -95,9 +115,7 @@ namespace ResourceDictionary
         {
             if (__result != null)
             {
-                var value = __result as Def;
-                Utils.TryModifyResult(ref value);
-                __result = value as ThingDef;
+                __result = Utils.GetMainDef(__result);
             }
         }
     }
@@ -109,9 +127,7 @@ namespace ResourceDictionary
         {
             if (__result != null)
             {
-                var value = __result as Def;
-                Utils.TryModifyResult(ref value);
-                __result = value as TerrainDef;
+                __result = Utils.GetMainDef(__result);
             }
         }
     }
@@ -121,7 +137,7 @@ namespace ResourceDictionary
     {
         public static void Postfix(ref Def __result)
         {
-            Utils.TryModifyResult(ref __result);
+            __result = Utils.GetMainDef(__result);
         }
     }
     
@@ -130,7 +146,7 @@ namespace ResourceDictionary
     {
         public static void Postfix(ref Def __result)
         {
-            Utils.TryModifyResult(ref __result);
+            __result = Utils.GetMainDef(__result);
         }
     }
     
@@ -139,9 +155,7 @@ namespace ResourceDictionary
     {
         public static void Prefix(ref ThingDef thingDef)
         {
-            var value = thingDef as Def;
-            Utils.TryModifyResult(ref value);
-            thingDef = value as ThingDef;
+            thingDef = Utils.GetMainDef(thingDef);
         }
     }
 
@@ -152,15 +166,11 @@ namespace ResourceDictionary
         {
             if (def != null)
             {
-                var value = def as Def;
-                Utils.TryModifyResult(ref value);
-                def = value as ThingDef;
+                def = Utils.GetMainDef(def);
             }
             if (stuff != null)
             {
-                var value = stuff as Def;
-                Utils.TryModifyResult(ref value);
-                stuff = value as ThingDef;
+                stuff = Utils.GetMainDef(stuff);
             }
         }
     }
@@ -170,9 +180,13 @@ namespace ResourceDictionary
     {
         public static void Postfix(Type defType, string defName, ref string __result)
         {
-            if (typeof(BuildableDef).IsAssignableFrom(defType))
+            if (typeof(ThingDef).IsAssignableFrom(defType))
             {
-                Utils.TryModifyResult(defName, ref __result);
+                __result = Utils.GetMainThingDefName(defName);
+            }
+            else if (typeof(TerrainDef).IsAssignableFrom(defType))
+            {
+                __result = Utils.GetMainTerrainDefName(defName);
             }
         }
     }
@@ -183,10 +197,14 @@ namespace ResourceDictionary
     {
         public static void Prefix(object wanter, FieldInfo fi, ref string targetDefName, string mayRequireMod = null, Type assumeFieldType = null)
         {
-            var type = fi.FieldType;
-            if (typeof(BuildableDef).IsAssignableFrom(type))
+            var type = assumeFieldType ?? fi.FieldType;
+            if (typeof(ThingDef).IsAssignableFrom(type))
             {
-                Utils.TryModifyResult(targetDefName, ref targetDefName);
+                targetDefName = Utils.GetMainThingDefName(targetDefName);
+            }
+            else if (typeof(TerrainDef).IsAssignableFrom(type))
+            {
+                targetDefName = Utils.GetMainTerrainDefName(targetDefName);
             }
         }
     }
@@ -197,10 +215,14 @@ namespace ResourceDictionary
     {
         public static void Prefix(object wanter, string fieldName, ref string targetDefName, string mayRequireMod = null, Type overrideFieldType = null)
         {
-            var type = wanter.GetType().GetField(fieldName, AccessTools.all).FieldType;
-            if (typeof(BuildableDef).IsAssignableFrom(type))
+            var type = overrideFieldType ?? wanter.GetType().GetField(fieldName, AccessTools.all).FieldType;
+            if (typeof(ThingDef).IsAssignableFrom(type))
             {
-                Utils.TryModifyResult(targetDefName, ref targetDefName);
+                targetDefName = Utils.GetMainThingDefName(targetDefName);
+            }
+            else if (typeof(TerrainDef).IsAssignableFrom(type))
+            {
+                targetDefName = Utils.GetMainTerrainDefName(targetDefName);
             }
         }
     }
@@ -220,18 +242,23 @@ namespace ResourceDictionary
                 {
                     yield return new CodeInstruction(OpCodes.Ldarg_0);
                     yield return new CodeInstruction(OpCodes.Ldarg_1);
+                    yield return new CodeInstruction(OpCodes.Ldarg_S, 4);
                     yield return new CodeInstruction(OpCodes.Call,
                         AccessTools.Method(typeof(DirectXmlCrossRefLoader_RegisterObjectWantsCrossRef_PatchThree), nameof(ReturnName)));
                 }
             }
         }
     
-        public static string ReturnName(string name, object wanter, string fieldName)
+        public static string ReturnName(string name, object wanter, string fieldName, Type overrideFieldType = null)
         {
-            var type = wanter.GetType().GetField(fieldName, AccessTools.all).FieldType;
-            if (typeof(BuildableDef).IsAssignableFrom(type))
+            var type = overrideFieldType ?? wanter.GetType().GetField(fieldName, AccessTools.all).FieldType;
+            if (typeof(ThingDef).IsAssignableFrom(type))
             {
-                Utils.TryModifyResult(name, ref name);
+                name = Utils.GetMainThingDefName(name);
+            }
+            else if (typeof(TerrainDef).IsAssignableFrom(type))
+            {
+                name = Utils.GetMainTerrainDefName(name);
             }
             return name;
         }

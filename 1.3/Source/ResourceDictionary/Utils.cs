@@ -20,6 +20,12 @@ namespace ResourceDictionary
     public static class Utils
     {
         public static HashSet<BuildableDef> processedDefs = new HashSet<BuildableDef>();
+
+        public static Dictionary<string, List<ThingGroup>> thingGroupsByDefNames = new Dictionary<string, List<ThingGroup>>();
+        public static Dictionary<ThingDef, List<ThingGroup>> thingGroupsByDefs = new Dictionary<ThingDef, List<ThingGroup>>();
+
+        public static Dictionary<string, List<ThingGroup>> terrainGroupsByDefNames = new Dictionary<string, List<ThingGroup>>();
+        public static Dictionary<TerrainDef, List<ThingGroup>> terrainGroupsByDefs = new Dictionary<TerrainDef, List<ThingGroup>>();
         public static void TryFormGroups()
         {
             var defsToProcess = DefDatabase<BuildableDef>.AllDefs.Where(x => !processedDefs.Contains(x) && x.IsSpawnable()).ToList();
@@ -65,6 +71,56 @@ namespace ResourceDictionary
                 .OrderByDescending(x => x.deduplicationEnabled)
                 .ThenByDescending(x => x.defs.Count)
                 .ThenBy(x => x.groupKey).ToList();
+
+            var groupsWithDeduplication = ResourceDictionaryMod.settings.groups.Values.Where(x => x.deduplicationEnabled).ToList();
+            thingGroupsByDefNames.Clear();
+            thingGroupsByDefs.Clear();
+            terrainGroupsByDefNames.Clear();
+            terrainGroupsByDefs.Clear();
+            foreach (var group in groupsWithDeduplication)
+            {
+                if (group.FirstDef is ThingDef thingDef)
+                {
+                    foreach (var defName in group.defs)
+                    {
+                        if (!thingGroupsByDefNames.TryGetValue(defName, out var list))
+                        {
+                            thingGroupsByDefNames[defName] = list = new List<ThingGroup>();
+                        }
+                        list.Add(group);
+                        var def = DefDatabase<ThingDef>.GetNamedSilentFail(defName);
+                        if (def != null)
+                        {
+                            if (!thingGroupsByDefs.TryGetValue(thingDef, out var list2))
+                            {
+                                thingGroupsByDefs[thingDef] = list2 = new List<ThingGroup>();
+                            }
+                            list2.Add(group);
+                        }
+                    }
+                }
+                if (group.FirstDef is TerrainDef terrainDef)
+                {
+                    foreach (var defName in group.defs)
+                    {
+                        if (!terrainGroupsByDefNames.TryGetValue(defName, out var list))
+                        {
+                            terrainGroupsByDefNames[defName] = list = new List<ThingGroup>();
+                        }
+                        list.Add(group);
+                        var def = DefDatabase<TerrainDef>.GetNamedSilentFail(defName);
+                        if (def != null)
+                        {
+                            if (!terrainGroupsByDefs.TryGetValue(terrainDef, out var list2))
+                            {
+                                terrainGroupsByDefs[terrainDef] = list2 = new List<ThingGroup>();
+                            }
+                            list2.Add(group);
+                        }
+                    }
+                }
+
+            }
         }
         public static void ProcessDef(BuildableDef def)
         {
@@ -215,58 +271,85 @@ namespace ResourceDictionary
         {
             return def.label?.ToLower();
         }
-        public static ThingGroup GetGroup(this BuildableDef def)
+        public static Def GetMainDef(Def __result)
         {
-            if (def != null)
+            if (__result is ThingDef thingDef)
             {
-                return ResourceDictionaryMod.settings.groups.Values
-                        .Where(x => x.deduplicationEnabled && x.defs.Count > 1 && x.defs.Contains(def.defName)).FirstOrDefault();
+                return thingDef.GetMainDef();
             }
-            return null;
+            else if (__result is TerrainDef terrainDef)
+            {
+                return terrainDef.GetMainDef();
+            }
+            return __result;
         }
-        public static void TryModifyResult(ref Def __result)
+        public static ThingDef GetMainDef(this ThingDef def)
         {
-            if (__result is BuildableDef def)
+            if (def != null && thingGroupsByDefs.TryGetValue(def, out var list))
             {
-                TryModifyResult(ref def);
+                foreach (var group in list)
+                {
+                    if (group.MainThingDef != def)
+                    {
+                        Log.Message("Replacing thing def " + def + " with " + group.MainThingDef);
+                        return group.MainThingDef;
+                    }
+                }
             }
+            return def;
         }
 
-        public static void TryModifyResult(ref BuildableDef def)
+        public static TerrainDef GetMainDef(this TerrainDef def)
         {
-            var group = def.GetGroup();
-            if (group is null)
+            if (def != null && terrainGroupsByDefs.TryGetValue(def, out var list))
             {
-                if (!processedDefs.Contains(def) && def.IsSpawnable())
+                foreach (var group in list)
                 {
-                    try
+                    if (group.MainTerrainDef != def)
                     {
-                        processedDefs.Add(def);
-                        ProcessDef(def);
-                        ProcessGroups();
-                        group = def.GetGroup();
+                        Log.Message("Replacing terrain def " + def + " with " + group.MainTerrainDef);
+                        return group.MainTerrainDef;
                     }
-                    catch
+                }
+            }
+            Log.Message("Unprocessed terrainDef: " + def);
+            return def;
+        }
+
+        public static string GetMainThingDefName(string defName)
+        {
+            if (defName != null && thingGroupsByDefNames.TryGetValue(defName, out var list))
+            {
+                foreach (var group in list)
+                {
+                    if (group.mainDefName != defName)
                     {
-                        Log.Error("Failed to process " + def);
+                        Log.Message("Replacing thing defName " + defName + " with " + group.mainDefName);
+                        return group.mainDefName;
+                    }
+                }
+            }
+            Log.Message("Unprocessed thingDefName: " + defName);
+            Log.ResetMessageCount();
+            return defName;
+        }
+
+        public static string GetMainTerrainDefName(string defName)
+        {
+            if (defName != null && terrainGroupsByDefNames.TryGetValue(defName, out var list))
+            {
+                foreach (var group in list)
+                {
+                    if (group.mainDefName != defName)
+                    {
+                        Log.Message("Replacing terrain defName " + defName + " with " + group.mainDefName);
+                        return group.mainDefName;
                     }
                 }
             }
 
-            if (group != null && group.MainDef != def)
-            {
-                def = group.MainDef;
-            }
-        }
-
-        public static void TryModifyResult(string defName, ref string result)
-        {
-            var group = ResourceDictionaryMod.settings.groups.Values.Where(x => x.deduplicationEnabled 
-                && x.defs.Contains(defName) && x.mainDefName != defName).FirstOrDefault();
-            if (group != null && result != group.mainDefName)
-            {
-                result = group.mainDefName;
-            }
+            Log.Message("Unprocessed terrainDefName: " + defName);
+            return defName;
         }
     }
 }
