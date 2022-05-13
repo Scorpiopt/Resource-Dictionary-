@@ -7,6 +7,7 @@ using Verse;
 using static Verse.DirectXmlCrossRefLoader;
 using System;
 using System.Linq;
+using RimWorld;
 
 namespace ResourceDictionary
 {
@@ -31,8 +32,6 @@ namespace ResourceDictionary
                 if (wanted is WantedRefForObject wantedRefForObject)
                 {
                     var defType = wantedRefForObject.overrideFieldType ?? wantedRefForObject.fi.FieldType;
-                    Log.Message("WantedRefForObject: " + defType + " - " + wantedRefForObject.defName);
-                    Log.ResetMessageCount();
                     if (typeof(ThingDef).IsAssignableFrom(defType))
                     {
                         wantedRefForObject.defName = Utils.GetMainThingDefName(wantedRefForObject.defName);
@@ -48,7 +47,6 @@ namespace ResourceDictionary
                     if (genericTypeDefinition == typeof(WantedRefForList<>))
                     {
                         var defType = wanted.GetType().GetGenericArguments()[0];
-                        Log.Message("WantedRefForList: " + defType + " - " + wanted);
                         if (typeof(ThingDef).IsAssignableFrom(defType))
                         {
                             var field = Traverse.Create(wanted).Field("defNames");
@@ -155,7 +153,7 @@ namespace ResourceDictionary
     {
         public static void Prefix(ref ThingDef thingDef)
         {
-            thingDef = Utils.GetMainDef(thingDef);
+            thingDef = thingDef.GetMainDef();
         }
     }
 
@@ -166,11 +164,11 @@ namespace ResourceDictionary
         {
             if (def != null)
             {
-                def = Utils.GetMainDef(def);
+                def = def.GetMainDef();
             }
             if (stuff != null)
             {
-                stuff = Utils.GetMainDef(stuff);
+                stuff = stuff.GetMainDef();
             }
         }
     }

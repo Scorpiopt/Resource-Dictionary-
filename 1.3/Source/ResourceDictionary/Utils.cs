@@ -41,6 +41,29 @@ namespace ResourceDictionary
                     ProcessDef(def);
                 }
                 ProcessGroups();
+                foreach (var def in defsToProcess)
+                {
+                    if (def is TerrainDef terrainDef)
+                    {
+                        if (terrainDef != terrainDef.GetMainDef())
+                        {
+                            if (DefDatabase<TerrainDef>.AllDefsListForReading.Contains(terrainDef))
+                            {
+                                DefDatabase<TerrainDef>.Remove(terrainDef);
+                            }
+                        }
+                    }
+                    else if (def is ThingDef thingDef)
+                    {
+                        if (thingDef != thingDef.GetMainDef())
+                        {
+                            if (DefDatabase<ThingDef>.AllDefsListForReading.Contains(thingDef))
+                            {
+                                DefDatabase<ThingDef>.Remove(thingDef);
+                            }
+                        }
+                    }
+                }
             }
         }
         public static void ProcessGroups()
@@ -61,10 +84,6 @@ namespace ResourceDictionary
                     {
                         group.mainDefName = group.defs.First();
                     }
-                    //if (group.thingDefs.Count > 1 && group.deduplicationEnabled)
-                    //{
-                    //    Log.Message("Main thing def: " + group.mainThingDefName + ", will replace following things: " + String.Join(", ", group.thingDefs.Where(x => x != group.mainThingDefName)));
-                    //}
                 }
             }
             ResourceDictionaryMod.settings.curThingGroups = ResourceDictionaryMod.settings.groups.Values
@@ -79,7 +98,7 @@ namespace ResourceDictionary
             terrainGroupsByDefs.Clear();
             foreach (var group in groupsWithDeduplication)
             {
-                if (group.FirstDef is ThingDef thingDef)
+                if (group.FirstDef is ThingDef)
                 {
                     foreach (var defName in group.defs)
                     {
@@ -88,8 +107,8 @@ namespace ResourceDictionary
                             thingGroupsByDefNames[defName] = list = new List<ThingGroup>();
                         }
                         list.Add(group);
-                        var def = DefDatabase<ThingDef>.GetNamedSilentFail(defName);
-                        if (def != null)
+                        var thingDef = DefDatabase<ThingDef>.GetNamedSilentFail(defName);
+                        if (thingDef != null)
                         {
                             if (!thingGroupsByDefs.TryGetValue(thingDef, out var list2))
                             {
@@ -99,7 +118,7 @@ namespace ResourceDictionary
                         }
                     }
                 }
-                if (group.FirstDef is TerrainDef terrainDef)
+                if (group.FirstDef is TerrainDef)
                 {
                     foreach (var defName in group.defs)
                     {
@@ -108,8 +127,8 @@ namespace ResourceDictionary
                             terrainGroupsByDefNames[defName] = list = new List<ThingGroup>();
                         }
                         list.Add(group);
-                        var def = DefDatabase<TerrainDef>.GetNamedSilentFail(defName);
-                        if (def != null)
+                        var terrainDef = DefDatabase<TerrainDef>.GetNamedSilentFail(defName);
+                        if (terrainDef != null)
                         {
                             if (!terrainGroupsByDefs.TryGetValue(terrainDef, out var list2))
                             {
@@ -147,7 +166,6 @@ namespace ResourceDictionary
         public static void ProcessRecipes()
         {
             var defs = DefDatabase<RecipeDef>.AllDefsListForReading.ListFullCopy();
-            //Log.Message("[Resource Dictionary] Processing " + defs.Count + " recipes.");
             var processedRecipes = new HashSet<RecipeDef>();
             foreach (var originalRecipe in defs)
             {
@@ -157,7 +175,6 @@ namespace ResourceDictionary
                 {
                     DefDatabase<RecipeDef>.Remove(originalRecipe);
                     originalRecipe.ClearRemovedRecipesFromRecipeUsers();
-                    //Log.Message("[Resource Dictionary] Removed duplicate recipe " + originalRecipe.label);
                 }
                 processedRecipes.Add(originalRecipe);
             }
@@ -291,7 +308,6 @@ namespace ResourceDictionary
                 {
                     if (group.MainThingDef != def)
                     {
-                        Log.Message("Replacing thing def " + def + " with " + group.MainThingDef);
                         return group.MainThingDef;
                     }
                 }
@@ -307,12 +323,10 @@ namespace ResourceDictionary
                 {
                     if (group.MainTerrainDef != def)
                     {
-                        Log.Message("Replacing terrain def " + def + " with " + group.MainTerrainDef);
                         return group.MainTerrainDef;
                     }
                 }
             }
-            Log.Message("Unprocessed terrainDef: " + def);
             return def;
         }
 
@@ -324,13 +338,10 @@ namespace ResourceDictionary
                 {
                     if (group.mainDefName != defName)
                     {
-                        Log.Message("Replacing thing defName " + defName + " with " + group.mainDefName);
                         return group.mainDefName;
                     }
                 }
             }
-            Log.Message("Unprocessed thingDefName: " + defName);
-            Log.ResetMessageCount();
             return defName;
         }
 
@@ -342,13 +353,10 @@ namespace ResourceDictionary
                 {
                     if (group.mainDefName != defName)
                     {
-                        Log.Message("Replacing terrain defName " + defName + " with " + group.mainDefName);
                         return group.mainDefName;
                     }
                 }
             }
-
-            Log.Message("Unprocessed terrainDefName: " + defName);
             return defName;
         }
     }
