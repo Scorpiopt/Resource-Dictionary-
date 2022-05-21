@@ -52,11 +52,11 @@ namespace ResourceDictionary
                         {
                             if (DefDatabase<TerrainDef>.AllDefsListForReading.Contains(terrainDef))
                             {
+                                terrainDef.ResolveReferences();
                                 DefDatabase<TerrainDef>.Remove(terrainDef);
                                 DefDatabase<TerrainDef>.defsByName[terrainDef.defName] = terrainDef.GetMainDef();
                                 terrainDef.shortHash = (ushort)(GenText.StableStringHash(terrainDef.defName) % 65535);
                                 terrainDefsByShortHash[terrainDef.shortHash] = terrainDef;
-                                Log.Message("Removed terrain: " + terrainDef + " - " + terrainDef.shortHash);
                             }
                         }
                     }
@@ -66,6 +66,7 @@ namespace ResourceDictionary
                         {
                             if (DefDatabase<ThingDef>.AllDefsListForReading.Contains(thingDef))
                             {
+                                thingDef.ResolveReferences();
                                 DefDatabase<ThingDef>.Remove(thingDef);
                                 DefDatabase<ThingDef>.defsByName[thingDef.defName] = thingDef.GetMainDef();
                                 thingDef.shortHash = (ushort)(GenText.StableStringHash(thingDef.defName) % 65535);
