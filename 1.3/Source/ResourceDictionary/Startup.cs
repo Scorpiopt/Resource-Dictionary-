@@ -1,6 +1,7 @@
 ﻿using HarmonyLib;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Verse;
 
 namespace ResourceDictionary
@@ -12,6 +13,29 @@ namespace ResourceDictionary
         {
             Utils.TryFormGroups();
             Debug();
+            foreach (var thingGroup in ResourceDictionaryMod.settings.groups.Values)
+            {
+                for (var i = 0; i < thingGroup.defs.Count; i++)
+                {
+                    var defName = thingGroup.defs[i];
+                    var def = DefDatabase<BuildableDef>.GetNamedSilentFail(defName);
+                    if (def is null)
+                    {
+                        thingGroup.defs.Remove(defName);
+                    }
+                }
+                if (thingGroup.deduplicationEnabled)
+                {
+                    if (thingGroup.defs.Count(x => DefDatabase<BuildableDef>.GetNamedSilentFail(x) != null) <= 1)
+                    {
+                        thingGroup.deduplicationEnabled = false;
+                    }
+                }
+            }
+            ResourceDictionaryMod.settings.curThingGroups = ResourceDictionaryMod.settings.groups.Values
+                .OrderByDescending(x => x.deduplicationEnabled)
+                .ThenByDescending(x => x.defs.Count)
+                .ThenBy(x => x.groupKey).ToList();
         }
 
         public static void Debug()
