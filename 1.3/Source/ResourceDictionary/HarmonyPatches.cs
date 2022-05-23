@@ -21,6 +21,18 @@ namespace ResourceDictionary
         }
     }
 
+    [HarmonyPatch(typeof(DefGenerator), "GenerateImpliedDefs_PostResolve")]
+    public class DefGenerator_GenerateImpliedDefs_PostResolve_Patch
+    {
+        public static void Postfix()
+        {
+            foreach (var def in Utils.defsToResolve)
+            {
+                def.ResolveReferences();
+            }
+        }
+    }
+
     [HarmonyPatch(typeof(DirectXmlCrossRefLoader), "ResolveAllWantedCrossReferences")]
     public static class DirectXmlCrossRefLoader_ResolveAllWantedCrossReferences
     {

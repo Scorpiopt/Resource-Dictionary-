@@ -29,6 +29,8 @@ namespace ResourceDictionary
 
         public static Dictionary<ushort, ThingDef> thingDefsByShortHash = new Dictionary<ushort, ThingDef>();
         public static Dictionary<ushort, TerrainDef> terrainDefsByShortHash = new Dictionary<ushort, TerrainDef>();
+
+        public static List<BuildableDef> defsToResolve = new List<BuildableDef>();
         public static void TryFormGroups()
         {
             var defsToProcess = DefDatabase<BuildableDef>.AllDefs.Where(x => !processedDefs.Contains(x) && x.IsSpawnable()).ToList();
@@ -52,7 +54,7 @@ namespace ResourceDictionary
                         {
                             if (DefDatabase<TerrainDef>.AllDefsListForReading.Contains(terrainDef))
                             {
-                                terrainDef.ResolveReferences();
+                                defsToResolve.Add(terrainDef);
                                 DefDatabase<TerrainDef>.Remove(terrainDef);
                                 DefDatabase<TerrainDef>.defsByName[terrainDef.defName] = terrainDef.GetMainDef();
                                 terrainDef.shortHash = (ushort)(GenText.StableStringHash(terrainDef.defName) % 65535);
@@ -66,7 +68,7 @@ namespace ResourceDictionary
                         {
                             if (DefDatabase<ThingDef>.AllDefsListForReading.Contains(thingDef))
                             {
-                                thingDef.ResolveReferences();
+                                defsToResolve.Add(thingDef);
                                 DefDatabase<ThingDef>.Remove(thingDef);
                                 DefDatabase<ThingDef>.defsByName[thingDef.defName] = thingDef.GetMainDef();
                                 thingDef.shortHash = (ushort)(GenText.StableStringHash(thingDef.defName) % 65535);
