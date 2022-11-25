@@ -36,9 +36,14 @@ namespace ResourceDictionary
     [HarmonyPatch(typeof(DirectXmlCrossRefLoader), "ResolveAllWantedCrossReferences")]
     public static class DirectXmlCrossRefLoader_ResolveAllWantedCrossReferences
     {
+        public static bool processedDefs;
         public static void Prefix()
         {
-            Utils.TryFormGroups();
+            if (processedDefs is false)
+            {
+                Utils.TryFormGroups();
+                processedDefs = true;
+            }
             foreach (var wanted in wantedRefs)
             {
                 if (wanted is WantedRefForObject wantedRefForObject)

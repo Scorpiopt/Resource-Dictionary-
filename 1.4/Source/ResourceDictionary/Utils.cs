@@ -33,7 +33,7 @@ namespace ResourceDictionary
         public static List<BuildableDef> defsToResolve = new List<BuildableDef>();
         public static void TryFormGroups()
         {
-            var defsToProcess = DefDatabase<BuildableDef>.AllDefs.Where(x => !processedDefs.Contains(x) && x.IsSpawnable()).ToList();
+            var defsToProcess = DefDatabase<BuildableDef>.AllDefsListForReading.Where(x => !processedDefs.Contains(x) && x.IsSpawnable()).ToList();
             if (defsToProcess.Any())
             {
                 if (ResourceDictionaryMod.settings.groups is null)
