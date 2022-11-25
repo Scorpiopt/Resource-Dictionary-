@@ -1,0 +1,6 @@
+C:\Program Files (x86)\Steam\steamapps\common\RimWorld\Mods\Resource-Dictionary-\1.4\Source\ResourceDictionary\bin\Release\ResourceDictionary.dll
+C:\Program Files (x86)\Steam\steamapps\common\RimWorld\Mods\Resource-Dictionary-\1.4\Source\ResourceDictionary\bin\Release\ResourceDictionary.pdb
+C:\Program Files (x86)\Steam\steamapps\common\RimWorld\Mods\Resource-Dictionary-\1.4\Source\ResourceDictionary\obj\Release\ResourceDictionary.csproj.AssemblyReference.cache
+C:\Program Files (x86)\Steam\steamapps\common\RimWorld\Mods\Resource-Dictionary-\1.4\Source\ResourceDictionary\obj\Release\ResourceDictionary.csproj.CoreCompileInputs.cache
+C:\Program Files (x86)\Steam\steamapps\common\RimWorld\Mods\Resource-Dictionary-\1.4\Source\ResourceDictionary\obj\Release\ResourceDictionary.dll
+C:\Program Files (x86)\Steam\steamapps\common\RimWorld\Mods\Resource-Dictionary-\1.4\Assemblies\ResourceDictionary.dll
