@@ -2,7 +2,7 @@
   "version": 3,
   "targets": {
     ".NETFramework,Version=v4.7.2": {
-      "Krafs.Publicizer/2.0.1": {
+      "Krafs.Publicizer/2.2.1": {
         "type": "package",
         "contentFiles": {
           "contentfiles/cs/any/Publicizer/IgnoresAccessChecksToAttribute.cs": {
@@ -16,7 +16,7 @@
           "build/Krafs.Publicizer.targets": {}
         }
       },
-      "Krafs.Rimworld.Ref/1.4.3558": {
+      "Krafs.Rimworld.Ref/1.4.3704": {
         "type": "package",
         "compile": {
           "ref/net472/Assembly-CSharp-firstpass.dll": {},
@@ -115,7 +115,7 @@
       }
     },
     ".NETFramework,Version=v4.7.2/win": {
-      "Krafs.Publicizer/2.0.1": {
+      "Krafs.Publicizer/2.2.1": {
         "type": "package",
         "contentFiles": {
           "contentfiles/cs/any/Publicizer/IgnoresAccessChecksToAttribute.cs": {
@@ -129,7 +129,120 @@
           "build/Krafs.Publicizer.targets": {}
         }
       },
-      "Krafs.Rimworld.Ref/1.4.3558": {
+      "Krafs.Rimworld.Ref/1.4.3704": {
+        "type": "package",
+        "compile": {
+          "ref/net472/Assembly-CSharp-firstpass.dll": {},
+          "ref/net472/Assembly-CSharp.dll": {},
+          "ref/net472/ISharpZipLib.dll": {},
+          "ref/net472/Mono.Posix.dll": {},
+          "ref/net472/Mono.Security.dll": {},
+          "ref/net472/NAudio.dll": {},
+          "ref/net472/NVorbis.dll": {},
+          "ref/net472/System.Configuration.dll": {},
+          "ref/net472/System.Core.dll": {},
+          "ref/net472/System.Runtime.Serialization.dll": {},
+          "ref/net472/System.Security.dll": {},
+          "ref/net472/System.ServiceModel.Internals.dll": {},
+          "ref/net472/System.Xml.Linq.dll": {},
+          "ref/net472/System.Xml.dll": {},
+          "ref/net472/System.dll": {},
+          "ref/net472/Unity.TextMeshPro.dll": {},
+          "ref/net472/UnityEngine.AIModule.dll": {},
+          "ref/net472/UnityEngine.ARModule.dll": {},
+          "ref/net472/UnityEngine.AccessibilityModule.dll": {},
+          "ref/net472/UnityEngine.AndroidJNIModule.dll": {},
+          "ref/net472/UnityEngine.AnimationModule.dll": {},
+          "ref/net472/UnityEngine.AssetBundleModule.dll": {},
+          "ref/net472/UnityEngine.AudioModule.dll": {},
+          "ref/net472/UnityEngine.ClothModule.dll": {},
+          "ref/net472/UnityEngine.ClusterInputModule.dll": {},
+          "ref/net472/UnityEngine.ClusterRendererModule.dll": {},
+          "ref/net472/UnityEngine.CoreModule.dll": {},
+          "ref/net472/UnityEngine.CrashReportingModule.dll": {},
+          "ref/net472/UnityEngine.DSPGraphModule.dll": {},
+          "ref/net472/UnityEngine.DirectorModule.dll": {},
+          "ref/net472/UnityEngine.GameCenterModule.dll": {},
+          "ref/net472/UnityEngine.GridModule.dll": {},
+          "ref/net472/UnityEngine.HotReloadModule.dll": {},
+          "ref/net472/UnityEngine.IMGUIModule.dll": {},
+          "ref/net472/UnityEngine.ImageConversionModule.dll": {},
+          "ref/net472/UnityEngine.InputLegacyModule.dll": {},
+          "ref/net472/UnityEngine.InputModule.dll": {},
+          "ref/net472/UnityEngine.JSONSerializeModule.dll": {},
+          "ref/net472/UnityEngine.LocalizationModule.dll": {},
+          "ref/net472/UnityEngine.ParticleSystemModule.dll": {},
+          "ref/net472/UnityEngine.PerformanceReportingModule.dll": {},
+          "ref/net472/UnityEngine.Physics2DModule.dll": {},
+          "ref/net472/UnityEngine.PhysicsModule.dll": {},
+          "ref/net472/UnityEngine.ProfilerModule.dll": {},
+          "ref/net472/UnityEngine.ScreenCaptureModule.dll": {},
+          "ref/net472/UnityEngine.SharedInternalsModule.dll": {},
+          "ref/net472/UnityEngine.SpriteMaskModule.dll": {},
+          "ref/net472/UnityEngine.SpriteShapeModule.dll": {},
+          "ref/net472/UnityEngine.StreamingModule.dll": {},
+          "ref/net472/UnityEngine.SubstanceModule.dll": {},
+          "ref/net472/UnityEngine.SubsystemsModule.dll": {},
+          "ref/net472/UnityEngine.TLSModule.dll": {},
+          "ref/net472/UnityEngine.TerrainModule.dll": {},
+          "ref/net472/UnityEngine.TerrainPhysicsModule.dll": {},
+          "ref/net472/UnityEngine.TextCoreModule.dll": {},
+          "ref/net472/UnityEngine.TextRenderingModule.dll": {},
+          "ref/net472/UnityEngine.TilemapModule.dll": {},
+          "ref/net472/UnityEngine.UI.dll": {},
+          "ref/net472/UnityEngine.UIElementsModule.dll": {},
+          "ref/net472/UnityEngine.UIModule.dll": {},
+          "ref/net472/UnityEngine.UNETModule.dll": {},
+          "ref/net472/UnityEngine.UmbraModule.dll": {},
+          "ref/net472/UnityEngine.UnityAnalyticsModule.dll": {},
+          "ref/net472/UnityEngine.UnityConnectModule.dll": {},
+          "ref/net472/UnityEngine.UnityTestProtocolModule.dll": {},
+          "ref/net472/UnityEngine.UnityWebRequestAssetBundleModule.dll": {},
+          "ref/net472/UnityEngine.UnityWebRequestAudioModule.dll": {},
+          "ref/net472/UnityEngine.UnityWebRequestModule.dll": {},
+          "ref/net472/UnityEngine.UnityWebRequestTextureModule.dll": {},
+          "ref/net472/UnityEngine.UnityWebRequestWWWModule.dll": {},
+          "ref/net472/UnityEngine.VFXModule.dll": {},
+          "ref/net472/UnityEngine.VRModule.dll": {},
+          "ref/net472/UnityEngine.VehiclesModule.dll": {},
+          "ref/net472/UnityEngine.VideoModule.dll": {},
+          "ref/net472/UnityEngine.WindModule.dll": {},
+          "ref/net472/UnityEngine.XRModule.dll": {},
+          "ref/net472/UnityEngine.dll": {},
+          "ref/net472/com.rlabrecque.steamworks.net.dll": {},
+          "ref/net472/mscorlib.dll": {}
+        }
+      },
+      "Lib.Harmony/2.2.2": {
+        "type": "package",
+        "compile": {
+          "lib/net472/0Harmony.dll": {
+            "related": ".xml"
+          }
+        },
+        "runtime": {
+          "lib/net472/_._": {
+            "related": ".xml"
+          }
+        }
+      }
+    },
+    ".NETFramework,Version=v4.7.2/win-arm64": {
+      "Krafs.Publicizer/2.2.1": {
+        "type": "package",
+        "contentFiles": {
+          "contentfiles/cs/any/Publicizer/IgnoresAccessChecksToAttribute.cs": {
+            "buildAction": "Compile",
+            "codeLanguage": "cs",
+            "copyToOutput": false
+          }
+        },
+        "build": {
+          "build/Krafs.Publicizer.props": {},
+          "build/Krafs.Publicizer.targets": {}
+        }
+      },
+      "Krafs.Rimworld.Ref/1.4.3704": {
         "type": "package",
         "compile": {
           "ref/net472/Assembly-CSharp-firstpass.dll": {},
@@ -228,7 +341,7 @@
       }
     },
     ".NETFramework,Version=v4.7.2/win-x64": {
-      "Krafs.Publicizer/2.0.1": {
+      "Krafs.Publicizer/2.2.1": {
         "type": "package",
         "contentFiles": {
           "contentfiles/cs/any/Publicizer/IgnoresAccessChecksToAttribute.cs": {
@@ -242,7 +355,7 @@
           "build/Krafs.Publicizer.targets": {}
         }
       },
-      "Krafs.Rimworld.Ref/1.4.3558": {
+      "Krafs.Rimworld.Ref/1.4.3704": {
         "type": "package",
         "compile": {
           "ref/net472/Assembly-CSharp-firstpass.dll": {},
@@ -341,7 +454,7 @@
       }
     },
     ".NETFramework,Version=v4.7.2/win-x86": {
-      "Krafs.Publicizer/2.0.1": {
+      "Krafs.Publicizer/2.2.1": {
         "type": "package",
         "contentFiles": {
           "contentfiles/cs/any/Publicizer/IgnoresAccessChecksToAttribute.cs": {
@@ -355,7 +468,7 @@
           "build/Krafs.Publicizer.targets": {}
         }
       },
-      "Krafs.Rimworld.Ref/1.4.3558": {
+      "Krafs.Rimworld.Ref/1.4.3704": {
         "type": "package",
         "compile": {
           "ref/net472/Assembly-CSharp-firstpass.dll": {},
@@ -455,10 +568,10 @@
     }
   },
   "libraries": {
-    "Krafs.Publicizer/2.0.1": {
-      "sha512": "X8swN3Wq42/g6HBrdx6B0BNBJzxVyLmrKdZNp6YYafTm5GTSh9WSVDm1Z3qtR4Qmjoe9NF1wN0QNFuoBLpmoaQ==",
+    "Krafs.Publicizer/2.2.1": {
+      "sha512": "QGI4nMGQbKsuFUUboixVHu4mv3lHB5RejIa7toIlzTmwLkuCYYEpUBJjmy3OpXYyj5dVSZAXVbr4oeMSloE67Q==",
       "type": "package",
-      "path": "krafs.publicizer/2.0.1",
+      "path": "krafs.publicizer/2.2.1",
       "files": [
         ".nupkg.metadata",
         ".signature.p7s",
@@ -469,21 +582,21 @@
         "build/net472/dnlib.dll",
         "contentfiles/cs/any/Publicizer/IgnoresAccessChecksToAttribute.cs",
         "icon.png",
-        "krafs.publicizer.2.0.1.nupkg.sha512",
+        "krafs.publicizer.2.2.1.nupkg.sha512",
         "krafs.publicizer.nuspec"
       ]
     },
-    "Krafs.Rimworld.Ref/1.4.3558": {
-      "sha512": "CWYO4a+Q1MBT+8LXmeUpRoWndmpxeoNJPi5noodr+h3B15US15deFrZWLoPKgKSDkjd/SXkgUYR5wnhmslbFCw==",
+    "Krafs.Rimworld.Ref/1.4.3704": {
+      "sha512": "INLy9Od0/msMfI9LROUaueV3QL8mnIB18xRjei5/Sw7HAYaw10emQKzts7la6AfSoFmB8mEY20bLVTnXNdeU7g==",
       "type": "package",
-      "path": "krafs.rimworld.ref/1.4.3558",
+      "path": "krafs.rimworld.ref/1.4.3704",
       "files": [
         ".nupkg.metadata",
         ".signature.p7s",
         "LICENSE.md",
         "README.md",
         "icon.png",
-        "krafs.rimworld.ref.1.4.3558.nupkg.sha512",
+        "krafs.rimworld.ref.1.4.3704.nupkg.sha512",
         "krafs.rimworld.ref.nuspec",
         "ref/net472/Assembly-CSharp-firstpass.dll",
         "ref/net472/Assembly-CSharp.dll",
@@ -598,8 +711,8 @@
   },
   "projectFileDependencyGroups": {
     ".NETFramework,Version=v4.7.2": [
-      "Krafs.Publicizer >= 2.0.1",
-      "Krafs.Rimworld.Ref >= 1.4.3558",
+      "Krafs.Publicizer >= 2.2.1",
+      "Krafs.Rimworld.Ref >= 1.4.3704",
       "Lib.Harmony >= 2.2.2"
     ]
   },
@@ -640,11 +753,11 @@
             "include": "Runtime, Build, Native, ContentFiles, Analyzers, BuildTransitive",
             "suppressParent": "All",
             "target": "Package",
-            "version": "[2.0.1, )"
+            "version": "[2.2.1, )"
           },
           "Krafs.Rimworld.Ref": {
             "target": "Package",
-            "version": "[1.4.3558, )"
+            "version": "[1.4.3704, )"
           },
           "Lib.Harmony": {
             "include": "Compile, Build, Native, ContentFiles, Analyzers, BuildTransitive",
@@ -656,6 +769,9 @@
     },
     "runtimes": {
       "win": {
+        "#import": []
+      },
+      "win-arm64": {
         "#import": []
       },
       "win-x64": {

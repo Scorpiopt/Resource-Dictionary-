@@ -12,7 +12,7 @@ namespace ResourceDictionary
         static Startup()
         {
             Utils.TryFormGroups();
-            Debug();
+            //Debug();
             foreach (var thingGroup in ResourceDictionaryMod.settings.groups.Values)
             {
                 for (var i = 0; i < thingGroup.defs.Count; i++)

@@ -18,6 +18,10 @@
 	<loadAfter>
 		<li>Ludeon.RimWorld</li>
 		<li>brrainz.harmony</li>
+		<li>co.uk.epicguru.rimforge</li>
 	</loadAfter>
+	<forceLoadAfter>
+		<li>co.uk.epicguru.rimforge</li>
+	</forceLoadAfter>
 	<description></description>
 </ModMetaData>

@@ -1,11 +1,11 @@
 {
   "version": 2,
-  "dgSpecHash": "YUimqTKNi+zvxb7n41A5b7nzpz4xW29i8AQpbo8mnn8+CfeaArWjqR0YjClzVEtXjJIty3rMBuGqUiIhQQB8bw==",
+  "dgSpecHash": "vBTkWKZXLvgfn3ZLx3EBZvujG7tBPHHcw+gf2CFdoQ7F11DL++gfhwxB5lmXP8sWBJzJfMsow3VTLxt4pWJkOg==",
   "success": true,
   "projectFilePath": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\RimWorld\\Mods\\Resource-Dictionary-\\1.4\\Source\\ResourceDictionary\\ResourceDictionary.csproj",
   "expectedPackageFiles": [
-    "C:\\Users\\Vova\\.nuget\\packages\\krafs.publicizer\\2.0.1\\krafs.publicizer.2.0.1.nupkg.sha512",
-    "C:\\Users\\Vova\\.nuget\\packages\\krafs.rimworld.ref\\1.4.3558\\krafs.rimworld.ref.1.4.3558.nupkg.sha512",
+    "C:\\Users\\Vova\\.nuget\\packages\\krafs.publicizer\\2.2.1\\krafs.publicizer.2.2.1.nupkg.sha512",
+    "C:\\Users\\Vova\\.nuget\\packages\\krafs.rimworld.ref\\1.4.3704\\krafs.rimworld.ref.1.4.3704.nupkg.sha512",
     "C:\\Users\\Vova\\.nuget\\packages\\lib.harmony\\2.2.2\\lib.harmony.2.2.2.nupkg.sha512"
   ],
   "logs": []
