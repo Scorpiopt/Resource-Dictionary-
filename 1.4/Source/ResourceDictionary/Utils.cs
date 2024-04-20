@@ -182,7 +182,6 @@ namespace ResourceDictionary
             var processedRecipes = new HashSet<RecipeDef>();
             foreach (var originalRecipe in defs)
             {
-                originalRecipe.ResolveReferences();
                 if (processedRecipes.Any(x => x.label == originalRecipe.label && x.products.Count == 1 && originalRecipe.products.Count == 1
                     && x.ProducedThingDef == originalRecipe.ProducedThingDef && x.products[0].count == originalRecipe.products[0].count))
                 {
