@@ -179,18 +179,57 @@ namespace ResourceDictionary
         public static void ProcessRecipes()
         {
             var defs = DefDatabase<RecipeDef>.AllDefsListForReading.ListFullCopy();
-            var processedRecipes = new HashSet<RecipeDef>();
+            var processedRecipes = new List<RecipeDef>(); // Use List instead of HashSet, order matters for checking against *already processed*
+
             foreach (var originalRecipe in defs)
             {
-                if (processedRecipes.Any(x => x.label == originalRecipe.label && x.products.Count == 1 && originalRecipe.products.Count == 1
-                    && x.ProducedThingDef == originalRecipe.ProducedThingDef && x.products[0].count == originalRecipe.products[0].count))
+                bool isDuplicate = false;
+                foreach (var processedRecipe in processedRecipes)
+                {
+                    if (AreRecipesDuplicate(originalRecipe, processedRecipe)) // Check for basic duplication
+                    {
+                        if (RecipeUsersAreSame(originalRecipe, processedRecipe)) // AND check if recipe users are the same
+                        {
+                            isDuplicate = true;
+                            break; // No need to check against other processed recipes if we found a duplicate
+                        }
+                    }
+                }
+
+                if (isDuplicate)
                 {
                     DefDatabase<RecipeDef>.Remove(originalRecipe);
                     originalRecipe.ClearRemovedRecipesFromRecipeUsers();
                 }
-                processedRecipes.Add(originalRecipe);
+                else
+                {
+                    processedRecipes.Add(originalRecipe); // Add to processed list only if it's NOT a duplicate
+                }
             }
         }
+
+        private static bool AreRecipesDuplicate(RecipeDef recipeA, RecipeDef recipeB)
+        {
+            if (recipeA.label != recipeB.label) return false;
+            if (recipeA.products.Count != 1 || recipeB.products.Count != 1) return false;
+            if (recipeA.ProducedThingDef != recipeB.ProducedThingDef) return false;
+            if (recipeA.products[0].count != recipeB.products[0].count) return false;
+            return true;
+        }
+
+        private static bool RecipeUsersAreSame(RecipeDef recipeA, RecipeDef recipeB)
+        {
+            if (recipeA.recipeUsers == null && recipeB.recipeUsers == null) return true; // Both null means same (no users)
+            if (recipeA.recipeUsers == null || recipeB.recipeUsers == null) return false; // One is null, the other isn't, different
+
+            if (recipeA.recipeUsers.Count != recipeB.recipeUsers.Count) return false; // Different counts, different users
+
+            // Compare recipeUsers sets. Order doesn't matter, presence does. Using HashSet for efficient comparison.
+            HashSet<ThingDef> usersA = new HashSet<ThingDef>(recipeA.recipeUsers);
+            HashSet<ThingDef> usersB = new HashSet<ThingDef>(recipeB.recipeUsers);
+            return usersA.SetEquals(usersB); // Check if sets contain the same elements
+        }
+
 
         public static void ClearRemovedRecipesFromRecipeUsers(this RecipeDef recipeDef)
         {
